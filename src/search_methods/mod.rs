@@ -1,3 +1,5 @@
+/// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/graph/selector_methods.py
+
 use std::collections::{HashMap};
 
 use crate::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, node::Node, graph::{UniqueId, Graph}};
@@ -6,7 +8,7 @@ use crate::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, node::Nod
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
 
 pub trait SearchMethod {
-    fn search<I>(graph: Graph, included_nodes: HashMap<UniqueId, &Node>, selector: String) -> I where I: Iterator<Item = UniqueId>;
+    fn search(graph: Graph, included_nodes: HashMap<UniqueId, &Node>, selector: String) -> std::slice::Iter<UniqueId>;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

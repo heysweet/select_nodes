@@ -11,7 +11,6 @@ use std::collections::{HashMap};
 
 use node::Node;
 use graph::{Graph, UniqueId};
-use search_methods::SearchMethod;
 
 fn generate_node_hash_map(nodes: Vec<&Node>) -> HashMap<UniqueId, &Node> {
     let mut result: HashMap<UniqueId, &Node>;
@@ -22,9 +21,9 @@ fn generate_node_hash_map(nodes: Vec<&Node>) -> HashMap<UniqueId, &Node> {
 }
 
 pub fn select_nodes(graph: Graph, nodes: Vec<&Node>, selector: String) -> Vec<&Node> {
-    let node_map = generate_node_hash_map(nodes);
+    let node_map = generate_node_hash_map(nodes.clone());
 
-    SearchMethod::search(graph, node_map, selector);
+    // SearchMethod::search(graph, node_map, selector);
 
     nodes
 }
