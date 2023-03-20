@@ -3,7 +3,7 @@
 use crate::graph::UniqueId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-enum NodeType {
+pub enum NodeType {
     Model,
     Analysis,
     Test,
@@ -40,6 +40,26 @@ impl NodeType {
             NodeType::Group => "group",
         }
     }
+
+    pub fn from_string(resource_type: &str) -> Option<NodeType> {
+        match resource_type {
+            "model" => Some(NodeType::Model),
+            "analysis" => Some(NodeType::Analysis),
+            "test" => Some(NodeType::Test),
+            "snapshot" => Some(NodeType::Snapshot),
+            "operation" => Some(NodeType::Operation),
+            "seed" => Some(NodeType::Seed),
+            "rpc" => Some(NodeType::RPCCall),
+            "sql operation" => Some(NodeType::SqlOperation),
+            "doc" => Some(NodeType::Documentation),
+            "source" => Some(NodeType::Source),
+            "macro" => Some(NodeType::Macro),
+            "exposure" => Some(NodeType::Exposure),
+            "metric" => Some(NodeType::Metric),
+            "group" => Some(NodeType::Group),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -63,7 +83,12 @@ struct BaseNode {
     unique_id: UniqueId,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Node {
+    unique_id: String,
+}
 
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct ParsedNode {
+    unique_id: UniqueId,
 }

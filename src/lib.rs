@@ -2,26 +2,22 @@
 #[path = "lib_tests.rs"]
 mod lib_tests;
 
-mod node;
-mod types;
 mod graph;
 mod search_methods;
 
 use std::collections::{HashMap};
 
-use node::Node;
-use graph::{ParsedGraph, UniqueId};
+use graph::{ParsedGraph, UniqueId, node::ParsedNode};
 
-fn generate_node_hash_map(nodes: Vec<&Node>) -> HashMap<UniqueId, &Node> {
-    let mut result: HashMap<UniqueId, &Node>;
+pub fn generate_node_hash_map(nodes: Vec<&ParsedNode>) -> HashMap<UniqueId, &ParsedNode> {
+    let mut result: HashMap<UniqueId, &ParsedNode>;
 
     todo!();
 
     result
 }
 
-pub fn select_nodes(graph: ParsedGraph, nodes: Vec<&Node>, selector: String) -> Vec<&Node> {
-    let node_map = generate_node_hash_map(nodes.clone());
+pub fn select_nodes(graph: ParsedGraph, nodes: HashMap<UniqueId, &ParsedNode>, selector: String) -> Vec<&ParsedNode> {
 
     // SearchMethod::search(graph, node_map, selector);
 
