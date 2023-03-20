@@ -2,13 +2,13 @@
 
 use std::collections::{HashMap};
 
-use crate::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, node::Node, graph::{UniqueId, Graph}};
+use crate::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, node::Node, graph::{UniqueId, ParsedGraph}};
 
 #[derive(Copy, Clone)]
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
 
 pub trait SearchMethod {
-    fn search(graph: Graph, included_nodes: HashMap<UniqueId, &Node>, selector: String) -> std::slice::Iter<UniqueId>;
+    fn search(graph: ParsedGraph, included_nodes: HashMap<UniqueId, &Node>, selector: String) -> std::slice::Iter<UniqueId>;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

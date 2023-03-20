@@ -7,36 +7,36 @@ use std::collections::{HashMap, HashSet};
 pub struct UniqueId(String);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Graph {
+pub struct ParsedGraph {
     children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     /// A map of nodes to its set of parents
     parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
 }
 
-impl Graph {
-    fn get_children_from_parents(parents_map: &HashMap<UniqueId, HashSet<UniqueId>>) -> HashMap<UniqueId, HashSet<UniqueId>> {
-        let mut children_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::new();
+impl ParsedGraph {
+    fn reverse_edges(edge_map: &HashMap<UniqueId, HashSet<UniqueId>>) -> HashMap<UniqueId, HashSet<UniqueId>> {
+        let mut target_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::new();
 
-        for (child_id, parent_ids) in parents_map.clone().iter() {
-            for parent_id in parent_ids {
-                let value = children_map.get_mut(&parent_id);
+        for (source_id, target_ids) in edge_map.clone().iter() {
+            for target_id in target_ids {
+                let value = target_map.get_mut(&target_id);
                 match value {
-                    Some(children) => {
-                        children.insert(child_id.clone());
+                    Some(targets) => {
+                        targets.insert(source_id.clone());
                     },
                     None => {
-                        let mut children = HashSet::new();
-                        children.insert(child_id.clone());
-                        children_map.insert(child_id.clone(), children);
+                        let mut targets = HashSet::new();
+                        targets.insert(source_id.clone());
+                        target_map.insert(source_id.clone(), targets);
                     }
                 }
             }
         }
-        children_map
+        target_map
     }
 
     pub fn new(parents_map: HashMap<UniqueId, HashSet<UniqueId>>) -> Self {
-        let children_map = Self::get_children_from_parents(&parents_map);
-        Graph { parents_map, children_map }
+        let children_map = Self::reverse_edges(&parents_map);
+        ParsedGraph { parents_map, children_map }
     }
 }
