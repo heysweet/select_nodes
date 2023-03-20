@@ -3,7 +3,7 @@
 mod lib_tests;
 
 mod graph;
-mod search_methods;
+mod selector;
 
 use std::collections::{HashMap};
 
