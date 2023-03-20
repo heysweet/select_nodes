@@ -1,6 +1,7 @@
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/graph/selector_methods.py
 
 pub mod methods;
+pub mod spec;
 
 use std::collections::{HashMap};
 
@@ -67,9 +68,8 @@ struct SourceStatusMethod {}
 struct WildcardMethod {}
 
 
-
 #[derive(Copy, Clone)]
-union MethodName {
+pub union MethodName {
     FQN: FQNMethod,
     Tag: TagMethod,
     Group: GroupMethod,

@@ -21,6 +21,8 @@ pub enum NodeType {
     Group
 }
 
+struct NoMatchingResourceType {}
+
 impl NodeType {
     pub fn key(&self) -> &str {
         match self {
@@ -41,23 +43,23 @@ impl NodeType {
         }
     }
 
-    pub fn from_string(resource_type: &str) -> Option<NodeType> {
+    pub fn from_string(resource_type: &str) -> Result<NodeType, NoMatchingResourceType> {
         match resource_type {
-            "model" => Some(NodeType::Model),
-            "analysis" => Some(NodeType::Analysis),
-            "test" => Some(NodeType::Test),
-            "snapshot" => Some(NodeType::Snapshot),
-            "operation" => Some(NodeType::Operation),
-            "seed" => Some(NodeType::Seed),
-            "rpc" => Some(NodeType::RPCCall),
-            "sql operation" => Some(NodeType::SqlOperation),
-            "doc" => Some(NodeType::Documentation),
-            "source" => Some(NodeType::Source),
-            "macro" => Some(NodeType::Macro),
-            "exposure" => Some(NodeType::Exposure),
-            "metric" => Some(NodeType::Metric),
-            "group" => Some(NodeType::Group),
-            _ => None,
+            "model" => Ok(NodeType::Model),
+            "analysis" => Ok(NodeType::Analysis),
+            "test" => Ok(NodeType::Test),
+            "snapshot" => Ok(NodeType::Snapshot),
+            "operation" => Ok(NodeType::Operation),
+            "seed" => Ok(NodeType::Seed),
+            "rpc" => Ok(NodeType::RPCCall),
+            "sql operation" => Ok(NodeType::SqlOperation),
+            "doc" => Ok(NodeType::Documentation),
+            "source" => Ok(NodeType::Source),
+            "macro" => Ok(NodeType::Macro),
+            "exposure" => Ok(NodeType::Exposure),
+            "metric" => Ok(NodeType::Metric),
+            "group" => Ok(NodeType::Group),
+            _ => Err(NoMatchingResourceType{}),
         }
     }
 }

@@ -2,6 +2,9 @@
 #[path = "lib_tests.rs"]
 mod lib_tests;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod graph;
 mod selector;
 
