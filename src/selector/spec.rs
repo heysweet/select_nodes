@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::ParseIntError};
 
 /// core/dbt/graph/selector_spec.py
 
@@ -19,6 +19,7 @@ lazy_static! {
     };
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IndirectSelection {
     Eager,
     Cautious,
@@ -36,35 +37,42 @@ fn _probably_path(value: &str) -> bool {
     }
 }
 
+#[derive(Clone)]
 struct ParsedMethod {
     method_name: MethodName,
     method_arguments: Vec<String>,
 }
 
 impl ParsedMethod {
-    pub fn from_captures(captures: Captures) -> ParsedMethod {
+    pub fn from_captures(captures: Captures) -> Result<ParsedMethod, String> {
         let method_match = captures.name("method");
-        let method = SelectionCriteria::get_str_from_match(method_match);
+        let raw_method = SelectionCriteria::get_str_from_match(method_match);
         let value_match = captures.name("value");
         let value = SelectionCriteria::get_str_from_match(value_match);
 
-        match (method_match, value_match) {
+        let method_parts = raw_method.split(".");
+        let raw_method_name = method_parts.next();
+
+        match (method_match, raw_method_name) {
             (None, _) => {
-                ParsedMethod{
-                    method_name: SelectionCriteria::default_method(v),
-                    method_arguments: todo!()
-                }
+                Ok(ParsedMethod{
+                    method_name: SelectionCriteria::default_method(value),
+                    method_arguments: vec![],
+                })
             },
-            (_, _) => {
-                ParsedMethod{
-                    method_name: SelectionCriteria::default_method(v),
-                    method_arguments: todo!()
-                }
-            }
+            (_, Some(method_name)) => {
+                let method_arguments: Vec<String> = method_parts.map(|s| s.to_string()).collect();
+                let method_name = MethodName::from_string(method_name)
+                    .ok_or(format!("'{}' is not a valid method name", method_name))?;
+                Ok(ParsedMethod{method_name, method_arguments})
+            },
+            // Should not be possible
+            (_, None) => Err("Matched empty method".to_string())
         }
     }
 }
 
+#[derive(Clone)]
 struct SelectionCriteria {
     raw: String,
     method: MethodName,
@@ -91,37 +99,45 @@ impl SelectionCriteria {
         }
     }
 
-    pub fn get_str_from_match(regex_match: Option<Match>) -> &str {
+    fn get_str_from_match(regex_match: Option<Match>) -> &str {
         match regex_match {
             Some(r) => r.as_str(),
             None => "",
         }
     }
 
-    fn from_captures(raw: &str, captures: Captures) -> SelectionCriteria {
-        let parsed_method = ParsedMethod::from_captures(captures);
+    fn get_num_from_match(regex_match: Option<Match>) -> Result<u64, ParseIntError> {
+        match regex_match {
+            Some(r) => {
+                r.as_str().parse::<u64>()
+            },
+            None => Err(ParseIntError{ kind: std::num::IntErrorKind::Empty }),
+        }
+    }
+
+    fn from_captures(raw: &str, captures: Captures, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
+        let parsed_method = ParsedMethod::from_captures(captures)?;
         
         let childrens_parents = captures.name("childrens_parents").is_some();
         let parents = captures.name("parents").is_some();
-        let parents_depth = captures.name("parents_depth").get_or_insert("0");
+        let parents_depth = Self::get_num_from_match(captures.name("parents_depth")).unwrap_or_default();
         let method = Self::get_str_from_match(captures.name("method"));
         let value = Self::get_str_from_match(captures.name("value"));
         let children = captures.name("children").is_some();
-        let children_depth = captures.name("children_depth");        
+        let children_depth = Self::get_num_from_match(captures.name("children_depth")).unwrap_or_default();        
 
-        SelectionCriteria {
+        Ok(SelectionCriteria {
             raw: raw.to_owned(),
             method: parsed_method.method_name,
             method_arguments: parsed_method.method_arguments,
             value: value.to_owned(),
             childrens_parents,
             parents,
-            // TODO: Convert Some(Match) to num
             parents_depth,
             children,
             children_depth,
-            indirect_selection: IndirectSelection::Eager,
-        }
+            indirect_selection: indirect_selection.clone(),
+        })
     }
 
     fn parse_method_args(method_args: &str) -> Vec<&str> {
@@ -131,14 +147,18 @@ impl SelectionCriteria {
         Vec::from(result)
     }
 
-    pub fn from_single_spec(raw: &str, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, &str> {
+    pub fn from_single_raw_spec(raw: &str) -> Result<SelectionCriteria, String> {
+        Self::from_single_spec(raw, &IndirectSelection::Eager)
+    }
+
+    pub fn from_single_spec(raw: &str, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
         let result = RAW_SELECTOR_PATTERN.captures(raw);
     
         match result {
             Some(captures) => {
-                Ok(SelectionCriteria::from_captures(raw, captures))
+                SelectionCriteria::from_captures(raw, captures, indirect_selection)
             },
-            None => Err("Invalid selector spec")
+            None => Err("Invalid selector spec".to_string())
         }
     }
 }

@@ -10,7 +10,7 @@ mod select_nodes_tests {
         let nodes = generate_node_hash_map(vec![]);
         let result = select_nodes(graph, nodes, "my_model".to_string());
         
-        let expected: Vec<&Node> = vec![&Node{}];
+        let expected: Vec<&ParsedNode> = vec![&ParsedNode{ unique_id: todo!() }];
         assert_eq!(result, expected);
     }
 
@@ -20,7 +20,7 @@ mod select_nodes_tests {
         let nodes = generate_node_hash_map(vec![&Node{}]);
         let result = select_nodes(graph, nodes, "my_model".to_string());
         
-        let expected: Vec<&Node> = vec![&Node{}];
+        let expected: Vec<&ParsedNode> = vec![&ParsedNode{ unique_id: todo!() }];
         assert_eq!(result, expected);
     }
 
@@ -30,7 +30,7 @@ mod select_nodes_tests {
         let nodes = vec![&Node{}, &Node{}];
         let result = select_nodes(graph, nodes, "my_model".to_string());
         
-        let expected: Vec<&Node> = vec![&Node{}];
+        let expected: Vec<&ParsedNode> = vec![&ParsedNode{ unique_id: todo!() }];
         assert_eq!(result, expected);
     }
 
@@ -40,7 +40,7 @@ mod select_nodes_tests {
         let nodes = generate_node_hash_map(vec![&Node{}]);
         let result = select_nodes(graph, nodes, "other_model".to_string());
         
-        let expected: Vec<&Node> = vec![];
+        let expected: Vec<&ParsedNode> = vec![];
         assert_eq!(result, expected);
     }
 }

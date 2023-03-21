@@ -86,7 +86,7 @@ pub union MethodName {
     Metric: MetricMethod,
     Result: ResultMethod,
     SourceStatus: SourceStatusMethod,
-    Wildcard: WildcardMethod
+    Wildcard: WildcardMethod,
 }
 
 impl MethodName {
@@ -109,6 +109,29 @@ impl MethodName {
             ResultMethod => "result",
             SourceStatusMethod => "source_status",
             WildcardMethod => "wildcard",
+        }
+    }
+
+    pub fn from_string(input: &str) -> Option<MethodName> {
+        match input {
+            "fqn" => Some(MethodName{FQN: FQNMethod{}}),
+            "tag" => Some(MethodName{Tag: TagMethod{}}),
+            "group" => Some(MethodName{Group: GroupMethod{}}),
+            "source" => Some(MethodName{Source: SourceMethod{}}),
+            "path" => Some(MethodName{Path: PathMethod{}}),
+            "file" => Some(MethodName{File: FileMethod{}}),
+            "package" => Some(MethodName{Package: PackageMethod{}}),
+            "config" => Some(MethodName{Config: ConfigMethod{}}),
+            "test_name" => Some(MethodName{TestName: TestNameMethod{}}),
+            "test_type" => Some(MethodName{TestType: TestTypeMethod{}}),
+            "resource_type" => Some(MethodName{ResourceType: ResourceTypeMethod{}}),
+            "state" => Some(MethodName{State: StateMethod{}}),
+            "exposure" => Some(MethodName{Exposure: ExposureMethod{}}),
+            "metric" => Some(MethodName{Metric: MetricMethod{}}),
+            "result" => Some(MethodName{Result: ResultMethod{}}),
+            "source_status" => Some(MethodName{SourceStatus: SourceStatusMethod{}}),
+            "wildcard" => Some(MethodName{Wildcard: WildcardMethod{}}),
+            _ => None,
         }
     }
 }
