@@ -12,6 +12,8 @@ use std::collections::{HashMap};
 
 use graph::{ParsedGraph, UniqueId, node::ParsedNode};
 
+use crate::selector::{spec::SelectionCriteria, SearchMethod};
+
 pub fn generate_node_hash_map(nodes: Vec<&ParsedNode>) -> HashMap<UniqueId, &ParsedNode> {
     let mut result: HashMap<UniqueId, &ParsedNode>;
 
@@ -20,9 +22,8 @@ pub fn generate_node_hash_map(nodes: Vec<&ParsedNode>) -> HashMap<UniqueId, &Par
     result
 }
 
-pub fn select_nodes(graph: ParsedGraph, nodes: HashMap<UniqueId, &ParsedNode>, selector: &str) -> Vec<ParsedNode> {
+pub fn select_nodes(graph: ParsedGraph, raw_selector: &str) -> Result<std::slice::Iter<UniqueId>, String> {
+    let selection_criteria = SelectionCriteria::from_single_raw_spec(raw_selector)?;
 
-    // SearchMethod::search(graph, node_map, selector);
-
-    nodes
+    Ok(selection_criteria.method.search(graph, raw_selector))
 }

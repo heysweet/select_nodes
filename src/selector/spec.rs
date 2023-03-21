@@ -2,7 +2,7 @@
 #[path = "spec_tests.rs"]
 mod spec_tests;
 
-use std::{collections::VecDeque, num::ParseIntError};
+use std::collections::VecDeque;
 
 /// core/dbt/graph/selector_spec.py
 
@@ -48,13 +48,13 @@ struct ParsedMethod {
 }
 
 impl ParsedMethod {
-    pub fn from_captures(captures: Captures) -> Result<ParsedMethod, String> {
+    pub fn from_captures(captures: &Captures) -> Result<ParsedMethod, String> {
         let method_match = captures.name("method");
         let raw_method = SelectionCriteria::get_str_from_match(method_match);
         let value_match = captures.name("value");
         let value = SelectionCriteria::get_str_from_match(value_match);
 
-        let method_parts = raw_method.split(".");
+        let mut method_parts = raw_method.split(".");
         let raw_method_name = method_parts.next();
 
         match (method_match, raw_method_name) {
@@ -77,18 +77,22 @@ impl ParsedMethod {
 }
 
 #[derive(Clone)]
-struct SelectionCriteria {
-    raw: String,
-    method: MethodName,
-    method_arguments: Vec<String>,
-    value: String,
-    childrens_parents: bool,
-    parents: bool,
-    parents_depth: u64,
-    children: bool,
-    children_depth: u64,
+pub struct SelectionCriteria {
+    pub raw: String,
+    pub method: MethodName,
+    pub method_arguments: Vec<String>,
+    pub value: String,
+    pub childrens_parents: bool,
+    pub parents: bool,
+    pub parents_depth: u64,
+    pub children: bool,
+    pub children_depth: u64,
     // TODO: Default to Eager
-    indirect_selection: IndirectSelection,
+    pub indirect_selection: IndirectSelection,
+}
+
+pub enum SelectionError {
+    ParseIntError
 }
 
 impl SelectionCriteria {
@@ -110,16 +114,16 @@ impl SelectionCriteria {
         }
     }
 
-    fn get_num_from_match(regex_match: Option<Match>) -> Result<u64, ParseIntError> {
+    fn get_num_from_match(regex_match: Option<Match>) -> Result<u64, SelectionError> {
         match regex_match {
             Some(r) => {
-                r.as_str().parse::<u64>()
+                r.as_str().parse::<u64>().or_else(|_| Err(SelectionError::ParseIntError{ }))
             },
-            None => Err(ParseIntError{ kind: std::num::IntErrorKind::Empty }),
+            None => Err(SelectionError::ParseIntError{ }),
         }
     }
 
-    fn from_captures(raw: &str, captures: Captures, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
+    fn from_captures(raw: &str, captures: &Captures, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
         let parsed_method = ParsedMethod::from_captures(captures)?;
         
         let childrens_parents = captures.name("childrens_parents").is_some();
@@ -160,7 +164,7 @@ impl SelectionCriteria {
     
         match result {
             Some(captures) => {
-                SelectionCriteria::from_captures(raw, captures, indirect_selection)
+                SelectionCriteria::from_captures(raw, &captures, indirect_selection)
             },
             None => Err("Invalid selector spec".to_string())
         }

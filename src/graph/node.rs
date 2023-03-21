@@ -21,7 +21,8 @@ pub enum NodeType {
     Group
 }
 
-struct NoMatchingResourceType {}
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct NoMatchingResourceType {}
 
 impl NodeType {
     pub fn key(&self) -> &str {
@@ -98,7 +99,7 @@ impl Node {
     pub fn parse(&self) -> ParsedNode {
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
-        ParsedNode{ unique_id: UniqueId(self.unique_id) }
+        ParsedNode{ unique_id: UniqueId(self.unique_id.clone()) }
     }
 }
 

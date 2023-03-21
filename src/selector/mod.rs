@@ -11,7 +11,7 @@ use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, no
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
 
 pub trait SearchMethod {
-    fn search<'a>(graph: ParsedGraph, included_nodes: HashMap<UniqueId, &'a ParsedNode>, selector: &'a str) -> std::slice::Iter<'a, UniqueId>;
+    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId>;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -87,6 +87,12 @@ pub union MethodName {
     Result: ResultMethod,
     SourceStatus: SourceStatusMethod,
     Wildcard: WildcardMethod,
+}
+
+impl SearchMethod for MethodName {
+    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+        panic!("All derived types must implement this")
+    }
 }
 
 impl MethodName {
