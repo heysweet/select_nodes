@@ -3,13 +3,11 @@ pub mod types;
 
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 
-use std::{collections::{HashMap, HashSet}, hash::Hash};
+use std::{collections::{HashMap, HashSet}};
 
 use self::node::ParsedNode;
 
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct UniqueId(String);
+pub use String as UniqueId;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParsedGraph {

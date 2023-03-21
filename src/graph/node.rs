@@ -99,7 +99,7 @@ impl Node {
     pub fn parse(&self) -> ParsedNode {
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
-        ParsedNode{ unique_id: UniqueId(self.unique_id.clone()) }
+        ParsedNode{ unique_id: self.unique_id.clone() }
     }
 }
 
