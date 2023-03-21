@@ -91,6 +91,7 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum SelectionError {
     ParseIntError
 }

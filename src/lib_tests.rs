@@ -2,18 +2,21 @@
 
 #[cfg(test)]
 mod select_nodes_tests {
+    use std::assert_matches::assert_matches;
+
     use crate::graph::node::Node;
 
     use super::super::{*};
 
     #[test]
     fn it_handles_an_empty_collection_of_nodes() {
-        let nodes: Vec<&ParsedNode> = nodes.iter().map(|n| &n.parse()).collect();
+        let nodes = vec![];
         let graph = todo!();
         let nodes = generate_node_hash_map(vec![]);
         let result = select_nodes(graph, "my_model");
         
-        let expected: Vec<ParsedNode> = vec![ParsedNode{ unique_id: todo!() }];
+        let expected: Result<std::slice::Iter<UniqueId>, String> = Ok(vec![].iter());
+        assert_matches!(result, expected);
         assert_eq!(result, expected);
     }
 
