@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 /// core/dbt/graph/selector_spec.py
 
 use super::{MethodName, FQNMethod, FileMethod, PathMethod};
-use regex::{Regex, Captures};
+use regex::{Regex, Captures, Match};
 
 lazy_static! {
     static ref RAW_SELECTOR_PATTERN: Regex = {
@@ -36,32 +36,31 @@ fn _probably_path(value: &str) -> bool {
     }
 }
 
-// TODO: Use builder type to validate at compile time
-struct SelectionCriteriaBuilder {
-    raw: String,
-    method: Option<MethodName>,
-    value: Option<String>,
-    childrens_parents: Option<bool>,
-    parents: Option<bool>,
-    parents_depth: Option<u64>,
-    children: Option<bool>,
-    children_depth: Option<u64>,
-    // TODO: Default to Eager
-    indirect_selection: Option<IndirectSelection>,
+struct ParsedMethod {
+    method_name: MethodName,
+    method_arguments: Vec<String>,
 }
 
-impl SelectionCriteriaBuilder {
-    pub fn new(raw: &str) -> SelectionCriteriaBuilder {
-        SelectionCriteriaBuilder{
-            raw: raw.to_owned(),
-            method: None,
-            value: None,
-            childrens_parents: None,
-            parents: None,
-            parents_depth: None,
-            children: None,
-            children_depth: None,
-            indirect_selection: None,
+impl ParsedMethod {
+    pub fn from_captures(captures: Captures) -> ParsedMethod {
+        let method_match = captures.name("method");
+        let method = SelectionCriteria::get_str_from_match(method_match);
+        let value_match = captures.name("value");
+        let value = SelectionCriteria::get_str_from_match(value_match);
+
+        match (method_match, value_match) {
+            (None, _) => {
+                ParsedMethod{
+                    method_name: SelectionCriteria::default_method(v),
+                    method_arguments: todo!()
+                }
+            },
+            (_, _) => {
+                ParsedMethod{
+                    method_name: SelectionCriteria::default_method(v),
+                    method_arguments: todo!()
+                }
+            }
         }
     }
 }
@@ -81,7 +80,7 @@ struct SelectionCriteria {
 }
 
 impl SelectionCriteria {
-    fn default_method(value: &str) -> MethodName {
+    pub fn default_method(value: &str) -> MethodName {
         let is_probably_path = _probably_path(value);
         let lowercase_value = value.to_lowercase();
         let is_relevant_filetype = lowercase_value.ends_with(".sql") || lowercase_value.ends_with(".py") || lowercase_value.ends_with(".csv");
@@ -92,55 +91,36 @@ impl SelectionCriteria {
         }
     }
 
-    fn from_strings(
-        raw: &str, 
-        method: Option<&str>,
-        method_arguments: Vec<String>,
-        value: &str,
-        childrens_parents: &str,
-        parents: &str,
-        parents_depth: &str,
-        children: &str,
-        children_depth: &str,
-        indirect_selection: &str
-    ) -> SelectionCriteria {
-        SelectionCriteria {
-            raw: raw.to_owned(),
-            method: method.to_owned(),
-            method_arguments: method_arguments.to_owned(),
-            value: value.to_owned(),
-            childrens_parents: (),
-            parents: bool::from(parents),
-            parents_depth: (),
-            children: (),
-            children_depth: (),
-            indirect_selection: ()
+    pub fn get_str_from_match(regex_match: Option<Match>) -> &str {
+        match regex_match {
+            Some(r) => r.as_str(),
+            None => "",
         }
     }
 
     fn from_captures(raw: &str, captures: Captures) -> SelectionCriteria {
-        /// TODO: if Match, get value and pass it along
-        /// if None, then get default value
-        let childrens_parents = captures.name("childrens_parents");
-        let parents = captures.name("parents");
-        let parents_depth = captures.name("parents_depth");
-        let method = captures.name("method");
-        let value = captures.name("value");
-        let children = captures.name("children");
-        let children_depth = captures.name("children_depth");
-
-        let mut builder = SelectionCriteriaBuilder::new(raw);
+        let parsed_method = ParsedMethod::from_captures(captures);
+        
+        let childrens_parents = captures.name("childrens_parents").is_some();
+        let parents = captures.name("parents").is_some();
+        let parents_depth = captures.name("parents_depth").get_or_insert("0");
+        let method = Self::get_str_from_match(captures.name("method"));
+        let value = Self::get_str_from_match(captures.name("value"));
+        let children = captures.name("children").is_some();
+        let children_depth = captures.name("children_depth");        
 
         SelectionCriteria {
             raw: raw.to_owned(),
-            method: captures.name("method").un().as_str(),
-            value: ,
-            childrens_parents: captures.name("childrens_parents"),
-            parents: captures.name("parents"),
-            parents_depth: captures.name("parents_depth"),
-            children: todo!(),
-            children_depth: todo!(),
-            indirect_selection: todo!()
+            method: parsed_method.method_name,
+            method_arguments: parsed_method.method_arguments,
+            value: value.to_owned(),
+            childrens_parents,
+            parents,
+            // TODO: Convert Some(Match) to num
+            parents_depth,
+            children,
+            children_depth,
+            indirect_selection: IndirectSelection::Eager,
         }
     }
 
