@@ -20,7 +20,7 @@ pub fn generate_node_hash_map(nodes: Vec<&ParsedNode>) -> HashMap<UniqueId, &Par
     result
 }
 
-pub fn select_nodes(graph: ParsedGraph, nodes: HashMap<UniqueId, &ParsedNode>, selector: String) -> Vec<&ParsedNode> {
+pub fn select_nodes(graph: ParsedGraph, nodes: HashMap<UniqueId, &ParsedNode>, selector: &str) -> Vec<ParsedNode> {
 
     // SearchMethod::search(graph, node_map, selector);
 

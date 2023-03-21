@@ -11,7 +11,7 @@ use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, no
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
 
 pub trait SearchMethod {
-    fn search(graph: ParsedGraph, included_nodes: HashMap<UniqueId, &ParsedNode>, selector: String) -> std::slice::Iter<UniqueId>;
+    fn search<'a>(graph: ParsedGraph, included_nodes: HashMap<UniqueId, &'a ParsedNode>, selector: &'a str) -> std::slice::Iter<'a, UniqueId>;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

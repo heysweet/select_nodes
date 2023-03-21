@@ -90,6 +90,18 @@ pub struct Node {
     unique_id: String,
 }
 
+impl Node {
+    pub fn new(unique_id: &str) -> Node {
+        Node{ unique_id: unique_id.to_string() }
+    }
+
+    pub fn parse(&self) -> ParsedNode {
+        // TODO: we're not validating this is unique, and cannot from
+        // a parse on Node itself
+        ParsedNode{ unique_id: UniqueId(self.unique_id) }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ParsedNode {
     unique_id: UniqueId,
