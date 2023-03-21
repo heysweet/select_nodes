@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "spec_tests.rs"]
+mod spec_tests;
+
 use std::{collections::VecDeque, num::ParseIntError};
 
 /// core/dbt/graph/selector_spec.py
