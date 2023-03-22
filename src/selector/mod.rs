@@ -3,9 +3,7 @@
 pub mod methods;
 pub mod spec;
 
-use std::collections::{HashMap};
-
-use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, node::ParsedNode, {UniqueId, ParsedGraph}};
+use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, {UniqueId, ParsedGraph}};
 
 #[derive(Copy, Clone)]
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }

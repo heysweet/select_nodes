@@ -14,10 +14,10 @@ use graph::{ParsedGraph, UniqueId, node::ParsedNode};
 
 use crate::selector::{spec::SelectionCriteria, SearchMethod};
 
-pub fn generate_node_hash_map(nodes: Vec<&ParsedNode>) -> HashMap<UniqueId, &ParsedNode> {
-    let mut result: HashMap<UniqueId, &ParsedNode>;
+pub fn generate_node_hash_map<Iter>(nodes: Iter) -> HashMap<UniqueId, ParsedNode> where Iter: Iterator<Item = ParsedNode> {
+    let mut result: HashMap<UniqueId, ParsedNode> = HashMap::new();
 
-    todo!();
+    nodes.for_each(|node| { result.insert(node.unique_id.clone(), node); });
 
     result
 }

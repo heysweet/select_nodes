@@ -23,7 +23,7 @@ impl ParsedGraph {
 
         for (source_id, target_ids) in edge_map.clone().iter() {
             for target_id in target_ids {
-                let value = target_map.get_mut(&target_id);
+                let value = target_map.get_mut(target_id);
                 match value {
                     Some(targets) => {
                         targets.insert(source_id.clone());

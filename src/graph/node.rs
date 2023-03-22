@@ -105,5 +105,5 @@ impl Node {
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ParsedNode {
-    unique_id: UniqueId,
+    pub unique_id: UniqueId,
 }

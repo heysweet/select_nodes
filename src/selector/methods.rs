@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use crate::graph::{ParsedGraph, UniqueId, node::{ParsedNode, NodeType}};
+use crate::graph::{ParsedGraph, UniqueId, node::NodeType};
 
 use super::{SearchMethod, FileMethod, ResourceTypeMethod, FQNMethod, TagMethod, GroupMethod, SourceMethod, PathMethod, PackageMethod, ConfigMethod, TestNameMethod, TestTypeMethod, StateMethod, ExposureMethod, MetricMethod, ResultMethod, SourceStatusMethod, WildcardMethod};
 
