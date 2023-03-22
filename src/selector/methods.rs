@@ -64,7 +64,7 @@ impl SearchMethod for TestTypeMethod {
 
 impl SearchMethod for ResourceTypeMethod {
     fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
-        let maybe_resource_type = NodeType::from_string(&selector);
+        let maybe_resource_type = NodeType::from_string(selector);
         todo!()
     }
 }

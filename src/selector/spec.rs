@@ -97,8 +97,9 @@ pub enum SelectionError {
 }
 
 impl SelectionCriteria {
-    pub fn default_method(value: &str) -> MethodName {
-        let is_probably_path = _probably_path(value);
+    pub fn default_method(value: impl Into<String>) -> MethodName {
+        let value = value.into();
+        let is_probably_path = _probably_path(&value);
         let lowercase_value = value.to_lowercase();
         let is_relevant_filetype = lowercase_value.ends_with(".sql") || lowercase_value.ends_with(".py") || lowercase_value.ends_with(".csv");
         match (is_probably_path, is_relevant_filetype) {
@@ -149,23 +150,25 @@ impl SelectionCriteria {
         })
     }
 
-    fn parse_method_args(method_args: &str) -> Vec<&str> {
+    fn parse_method_args(method_args: impl Into<String>) -> Vec<String> {
+        let method_args: String = method_args.into();
         let mut result = method_args.split(".");
-        let mut result: VecDeque<&str> = result.collect();
+        let mut result: VecDeque<String> = result.map(|s| s.to_string()).collect();
         result.pop_front();
         Vec::from(result)
     }
 
-    pub fn from_single_raw_spec(raw: &str) -> Result<SelectionCriteria, String> {
+    pub fn from_single_raw_spec(raw: impl Into<String>) -> Result<SelectionCriteria, String> {
         Self::from_single_spec(raw, &IndirectSelection::Eager)
     }
 
-    pub fn from_single_spec(raw: &str, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
-        let result = RAW_SELECTOR_PATTERN.captures(raw);
+    pub fn from_single_spec(raw: impl Into<String>, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
+        let raw: String = raw.into();
+        let result = RAW_SELECTOR_PATTERN.captures(&raw);
     
         match result {
             Some(captures) => {
-                SelectionCriteria::from_captures(raw, &captures, indirect_selection)
+                SelectionCriteria::from_captures(&raw, &captures, indirect_selection)
             },
             None => Err("Invalid selector spec".to_string())
         }

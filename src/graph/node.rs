@@ -44,8 +44,8 @@ impl NodeType {
         }
     }
 
-    pub fn from_string(resource_type: &str) -> Result<NodeType, NoMatchingResourceType> {
-        match resource_type {
+    pub fn from_string(resource_type: impl Into<String>) -> Result<NodeType, NoMatchingResourceType> {
+        match resource_type.into().as_str() {
             "model" => Ok(NodeType::Model),
             "analysis" => Ok(NodeType::Analysis),
             "test" => Ok(NodeType::Test),
@@ -92,8 +92,8 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(unique_id: &str) -> Node {
-        Node{ unique_id: unique_id.to_string() }
+    pub fn new(unique_id: impl Into<String>) -> Node {
+        Node{ unique_id: unique_id.into() }
     }
 
     pub fn parse(&self) -> ParsedNode {

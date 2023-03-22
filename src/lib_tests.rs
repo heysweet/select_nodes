@@ -10,21 +10,24 @@ mod select_nodes_tests {
 
     fn add_parents(
         mut parents_map: HashMap<String, HashSet<String>>,
-        child_id: &str,
-        parent_ids: Vec<&str>
+        child_id: impl Into<String>,
+        parent_ids: Vec<impl Into<String>>
     ) -> HashMap<String, HashSet<String>> {
-        match parents_map.get(child_id) {
+        let child_id: String = child_id.into();
+        let parent_ids = parent_ids.iter().map(|id| {
+            let str: String = (*id).into();
+            str
+        });
+        match parents_map.get(&child_id) {
             Some(map) => {
                 let mut map = map.clone();
-                let to_add = parent_ids.iter().map(|id| (*id).to_string());
-                map.extend(to_add);
+                map.extend(parent_ids);
                 parents_map.insert(child_id.to_string(), map);
                 parents_map
             },
             None => {
                 let mut map = HashSet::new();
-                let to_add = parent_ids.iter().map(|id| (*id).to_string());
-                map.extend(to_add);
+                map.extend(parent_ids);
                 parents_map.insert(child_id.to_string(), map);
                 parents_map
             }

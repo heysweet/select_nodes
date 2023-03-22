@@ -116,8 +116,8 @@ impl MethodName {
         }
     }
 
-    pub fn from_string(input: &str) -> Option<MethodName> {
-        match input {
+    pub fn from_string(input: impl Into<String>) -> Option<MethodName> {
+        match input.into().as_str() {
             "fqn" => Some(MethodName{FQN: FQNMethod{}}),
             "tag" => Some(MethodName{Tag: TagMethod{}}),
             "group" => Some(MethodName{Group: GroupMethod{}}),
