@@ -12,10 +12,6 @@ enum SearchError {
     NoMatchingResourceType(String),
 }
 
-pub trait SearchMethod<Iter> where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String>  {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter;
-}
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 enum AccessType {
     Protected,
@@ -34,68 +30,27 @@ impl AccessType {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct FQNMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct TagMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-
-struct GroupMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct SourceMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct PathMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct FileMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct PackageMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct ConfigMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct TestNameMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct TestTypeMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct ResourceTypeMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct StateMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct ExposureMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct MetricMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct ResultMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct SourceStatusMethod {}
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct WildcardMethod {}
-
-
-#[derive(Copy, Clone)]
-pub union MethodName {
-    FQN: FQNMethod,
-    Tag: TagMethod,
-    Group: GroupMethod,
-    Source: SourceMethod,
-    Path: PathMethod,
-    File: FileMethod,
-    Package: PackageMethod,
-    Config: ConfigMethod,
-    TestName: TestNameMethod,
-    TestType: TestTypeMethod,
-    ResourceType: ResourceTypeMethod,
-    State: StateMethod,
-    Exposure: ExposureMethod,
-    Metric: MetricMethod,
-    Result: ResultMethod,
-    SourceStatus: SourceStatusMethod,
-    Wildcard: WildcardMethod,
+pub enum MethodName {
+    FQN,
+    Tag,
+    Group,
+    Source,
+    Path,
+    File,
+    Package,
+    Config,
+    TestName,
+    TestType,
+    ResourceType,
+    State,
+    Exposure,
+    Metric,
+    Result,
+    SourceStatus,
+    Wildcard,
 }
 
-impl<Iter> SearchMethod<Iter> for MethodName where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        panic!("All derived types must implement this")
-    }
-}
+use MethodName::*;
 
 impl MethodName {
     pub fn key(&self) -> &str {
@@ -122,23 +77,23 @@ impl MethodName {
 
     pub fn from_string(input: impl Into<String>) -> Option<MethodName> {
         match input.into().as_str() {
-            "fqn" => Some(MethodName{FQN: FQNMethod{}}),
-            "tag" => Some(MethodName{Tag: TagMethod{}}),
-            "group" => Some(MethodName{Group: GroupMethod{}}),
-            "source" => Some(MethodName{Source: SourceMethod{}}),
-            "path" => Some(MethodName{Path: PathMethod{}}),
-            "file" => Some(MethodName{File: FileMethod{}}),
-            "package" => Some(MethodName{Package: PackageMethod{}}),
-            "config" => Some(MethodName{Config: ConfigMethod{}}),
-            "test_name" => Some(MethodName{TestName: TestNameMethod{}}),
-            "test_type" => Some(MethodName{TestType: TestTypeMethod{}}),
-            "resource_type" => Some(MethodName{ResourceType: ResourceTypeMethod{}}),
-            "state" => Some(MethodName{State: StateMethod{}}),
-            "exposure" => Some(MethodName{Exposure: ExposureMethod{}}),
-            "metric" => Some(MethodName{Metric: MetricMethod{}}),
-            "result" => Some(MethodName{Result: ResultMethod{}}),
-            "source_status" => Some(MethodName{SourceStatus: SourceStatusMethod{}}),
-            "wildcard" => Some(MethodName{Wildcard: WildcardMethod{}}),
+            "fqn" => Some(FQN),
+            "tag" => Some(Tag),
+            "group" => Some(Group),
+            "source" => Some(Source),
+            "path" => Some(Path),
+            "file" => Some(File),
+            "package" => Some(Package),
+            "config" => Some(Config),
+            "test_name" => Some(TestName),
+            "test_type" => Some(TestType),
+            "resource_type" => Some(ResourceType),
+            "state" => Some(State),
+            "exposure" => Some(Exposure),
+            "metric" => Some(Metric),
+            "result" => Some(Result),
+            "source_status" => Some(SourceStatus),
+            "wildcard" => Some(Wildcard),
             _ => None,
         }
     }

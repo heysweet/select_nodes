@@ -6,13 +6,15 @@ mod select_nodes_tests {
 
     use super::super::{*};
 
+    use MethodName::*;
+
     #[test]
     fn it_parses_base_raw_input() {
         let raw = "asdf";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
         
-        let expected_method = MethodName{ FQN: FQNMethod {} };
+        let expected_method = FQN;
         let expected_method_arguments: Vec<String> = vec![];
 
         assert_eq!(result.raw, raw);

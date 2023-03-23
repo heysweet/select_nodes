@@ -1,108 +1,83 @@
 use crate::graph::ParsedGraph;
 
-use super::{SearchMethod, FileMethod, ResourceTypeMethod, FQNMethod, TagMethod, GroupMethod, SourceMethod, PathMethod, PackageMethod, ConfigMethod, TestNameMethod, TestTypeMethod, StateMethod, ExposureMethod, MetricMethod, ResultMethod, SourceStatusMethod, WildcardMethod, SearchError};
+use super::MethodName;
 
-impl<Iter> SearchMethod<Iter> for FQNMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
 
-impl<Iter> SearchMethod<Iter> for TagMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+use MethodName::*;
 
-impl<Iter> SearchMethod<Iter> for GroupMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+impl MethodName {
+    pub fn search(&self, graph: &ParsedGraph, selector: &str) -> Vec<String> {
+        match self {
+            FQN => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for SourceMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Tag => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for PathMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Group => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for FileMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Source => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for PackageMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Path => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for ConfigMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            File => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for TestNameMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Package => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for TestTypeMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            Config => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for ResourceTypeMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        let iter = graph.node_map.iter();
-        let iter = iter.filter(|(id, node)| node.resource_type.key() == selector);
-        let iter = iter.map(|(id, node)| *id);
-        iter.collect()
-    }
-}
+            TestName => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for StateMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            TestType => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for ExposureMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
-        todo!()
-    }
-}
+            ResourceType => {
+                let iter = graph.node_map.iter();
+                let iter = iter.filter(|(id, node)| node.resource_type.key() == selector);
+                let iter = iter.map(|(id, node)| id.clone());
+                iter.collect()
+            },
 
-impl<Iter> SearchMethod<Iter> for MetricMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
-        todo!()
-    }
-}
+            State => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for ResultMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
-        todo!()
-    }
-}
+            Exposure => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for SourceStatusMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
-        todo!()
-    }
-}
+            Metric => {
+                unimplemented!()
+            },
 
-impl<Iter> SearchMethod<Iter> for WildcardMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
-    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
-        todo!()
+            Result => {
+                unimplemented!()
+            },
+
+            SourceStatus => {
+                unimplemented!()
+            },
+
+            Wildcard => {
+                unimplemented!()
+            },
+        }
     }
 }

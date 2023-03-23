@@ -93,7 +93,8 @@ pub struct Node {
 }
 
 
-enum NodeParseError {
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum NodeParseError {
     NoMatchingResourceType(String),
 }
 
@@ -106,7 +107,7 @@ impl Node {
     }
 
     pub fn parse(&self) -> Result<ParsedNode, NodeParseError> {
-        let resource_type = NodeType::from_string(self.resource_type);
+        let resource_type = NodeType::from_string(self.resource_type.clone());
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
         match resource_type {
@@ -115,7 +116,7 @@ impl Node {
             },
             Ok(resource_type) => {
                 Ok(ParsedNode{
-                    unique_id: self.unique_id,
+                    unique_id: self.unique_id.clone(),
                     resource_type,
                 })
             }

@@ -6,8 +6,9 @@ use std::collections::VecDeque;
 
 /// core/dbt/graph/selector_spec.py
 
-use super::{MethodName, FQNMethod, FileMethod, PathMethod};
 use regex::{Regex, Captures, Match};
+
+use super::MethodName;
 
 lazy_static! {
     static ref RAW_SELECTOR_PATTERN: Regex = {
@@ -103,9 +104,9 @@ impl SelectionCriteria {
         let lowercase_value = value.to_lowercase();
         let is_relevant_filetype = lowercase_value.ends_with(".sql") || lowercase_value.ends_with(".py") || lowercase_value.ends_with(".csv");
         match (is_probably_path, is_relevant_filetype) {
-            (true, _) => MethodName{Path: PathMethod{}},
-            (_, true) => MethodName{File: FileMethod{}},
-            _ => MethodName{FQN: FQNMethod{}},
+            (true, _) => MethodName::Path,
+            (_, true) => MethodName::File,
+            _ => MethodName::FQN,
         }
     }
 

@@ -12,20 +12,18 @@ use std::collections::{HashMap};
 
 use graph::{ParsedGraph, UniqueId, node::ParsedNode};
 
-use crate::selector::{spec::SelectionCriteria, SearchMethod};
+use crate::selector::spec::SelectionCriteria;
 
-pub fn generate_node_hash_map<Iter>(nodes: Iter) -> HashMap<UniqueId, ParsedNode> where Iter: Iterator<Item = ParsedNode> {
-    let mut result: HashMap<UniqueId, ParsedNode> = HashMap::new();
-
-    nodes.for_each(|node| { result.insert(node.unique_id.clone(), node); });
-
-    result
+pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
+    nodes.iter().map(|node| { (node.unique_id.clone(), node.clone()) }).collect()
 }
 
-pub fn select_nodes(graph: ParsedGraph, raw_selector: impl Into<String>) -> Result<std::slice::Iter<UniqueId>, String> {
-    let raw_select: &str = raw_selector.into().as_str();
+pub fn select_nodes(graph: ParsedGraph, raw_selector: impl Into<String>) -> Result<Vec<UniqueId>, String> {
+    let binding = raw_selector.into();
+    let raw_select: &str = binding.as_str();
 
     let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select))?;
 
-    Ok(selection_criteria.method.search(&graph, raw_select))
+    let a: Vec<UniqueId> = selection_criteria.method.search(&graph, raw_select);
+    Ok(a)
 }
