@@ -1,106 +1,107 @@
-use crate::graph::{ParsedGraph, UniqueId, node::NodeType};
+use crate::graph::ParsedGraph;
 
-use super::{SearchMethod, FileMethod, ResourceTypeMethod, FQNMethod, TagMethod, GroupMethod, SourceMethod, PathMethod, PackageMethod, ConfigMethod, TestNameMethod, TestTypeMethod, StateMethod, ExposureMethod, MetricMethod, ResultMethod, SourceStatusMethod, WildcardMethod};
+use super::{SearchMethod, FileMethod, ResourceTypeMethod, FQNMethod, TagMethod, GroupMethod, SourceMethod, PathMethod, PackageMethod, ConfigMethod, TestNameMethod, TestTypeMethod, StateMethod, ExposureMethod, MetricMethod, ResultMethod, SourceStatusMethod, WildcardMethod, SearchError};
 
-impl SearchMethod for FQNMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for FQNMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for TagMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for TagMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for GroupMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for GroupMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for SourceMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for SourceMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for PathMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for PathMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for FileMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for FileMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for PackageMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for PackageMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for ConfigMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for ConfigMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for TestNameMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for TestNameMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for TestTypeMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for TestTypeMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for ResourceTypeMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
-        let maybe_resource_type = NodeType::from_string(selector);
+impl<Iter> SearchMethod<Iter> for ResourceTypeMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
+        let iter = graph.node_map.iter();
+        let iter = iter.filter(|(id, node)| node.resource_type.key() == selector).map(|(id, node)| id.to_string());
+        iter.into_iter()
+    }
+}
+
+impl<Iter> SearchMethod<Iter> for StateMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for StateMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for ExposureMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         todo!()
     }
 }
 
-impl SearchMethod for ExposureMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for MetricMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
         todo!()
     }
 }
 
-impl SearchMethod for MetricMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for ResultMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
         todo!()
     }
 }
 
-impl SearchMethod for ResultMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for SourceStatusMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
         todo!()
     }
 }
 
-impl SearchMethod for SourceStatusMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
-        todo!()
-    }
-}
-
-impl SearchMethod for WildcardMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
+impl<Iter> SearchMethod<Iter> for WildcardMethod where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) ->Iter {
         todo!()
     }
 }

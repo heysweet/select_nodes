@@ -27,5 +27,5 @@ pub fn select_nodes(graph: ParsedGraph, raw_selector: impl Into<String>) -> Resu
 
     let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select))?;
 
-    Ok(selection_criteria.method.search(graph, raw_select))
+    Ok(selection_criteria.method.search(&graph, raw_select))
 }

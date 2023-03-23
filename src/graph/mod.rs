@@ -11,10 +11,10 @@ pub use String as UniqueId;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParsedGraph {
-    node_map: HashMap<UniqueId, ParsedNode>,
-    children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    pub node_map: HashMap<UniqueId, ParsedNode>,
+    pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     /// A map of nodes to its set of parents
-    parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
 }
 
 impl ParsedGraph {

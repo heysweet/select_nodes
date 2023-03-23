@@ -89,21 +89,43 @@ struct BaseNode {
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Node {
     unique_id: String,
+    resource_type: String,
+}
+
+
+enum NodeParseError {
+    NoMatchingResourceType(String),
 }
 
 impl Node {
-    pub fn new(unique_id: impl Into<String>) -> Node {
-        Node{ unique_id: unique_id.into() }
+    pub fn new(
+        unique_id: impl Into<String>,
+        resource_type: impl Into<String>,
+    ) -> Node {
+        Node{ unique_id: unique_id.into(), resource_type: resource_type.into() }
     }
 
-    pub fn parse(&self) -> ParsedNode {
+    pub fn parse(&self) -> Result<ParsedNode, NodeParseError> {
+        let resource_type = NodeType::from_string(self.resource_type);
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
-        ParsedNode{ unique_id: self.unique_id.clone() }
+        match resource_type {
+            Err(NoMatchingResourceType) => {
+                Err(NodeParseError::NoMatchingResourceType("Could not parse resource".to_string()))
+            },
+            Ok(resource_type) => {
+                Ok(ParsedNode{
+                    unique_id: self.unique_id,
+                    resource_type,
+                })
+            }
+        }
+
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ParsedNode {
     pub unique_id: UniqueId,
+    pub resource_type: NodeType,
 }

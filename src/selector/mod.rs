@@ -8,8 +8,12 @@ use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, {U
 #[derive(Copy, Clone)]
 pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
 
-pub trait SearchMethod {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId>;
+enum SearchError {
+    NoMatchingResourceType(String),
+}
+
+pub trait SearchMethod<Iter> where Iter: Iterator<Item = String> {
+    fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -87,11 +91,11 @@ pub union MethodName {
     Wildcard: WildcardMethod,
 }
 
-impl SearchMethod for MethodName {
-    fn search<'a>(&self, graph: ParsedGraph, selector: &'a str) -> std::slice::Iter<'a, UniqueId> {
-        panic!("All derived types must implement this")
-    }
-}
+// impl SearchMethod for MethodName {
+//     fn search(&self, graph: &ParsedGraph, selector: &str) -> std::slice::Iter<&UniqueId> {
+//         panic!("All derived types must implement this")
+//     }
+// }
 
 impl MethodName {
     pub fn key(&self) -> &str {
