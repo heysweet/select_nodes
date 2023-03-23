@@ -62,11 +62,12 @@ impl<Iter> SearchMethod<Iter> for TestTypeMethod where Iter: Iterator<Item = Str
     }
 }
 
-impl<Iter> SearchMethod<Iter> for ResourceTypeMethod where Iter: Iterator<Item = String> {
+impl<Iter> SearchMethod<Iter> for ResourceTypeMethod where Iter: Iterator<Item = String> + std::iter::FromIterator<std::string::String> {
     fn search(&self, graph: &ParsedGraph, selector: &str) -> Iter {
         let iter = graph.node_map.iter();
-        let iter = iter.filter(|(id, node)| node.resource_type.key() == selector).map(|(id, node)| id.to_string());
-        iter.into_iter()
+        let iter = iter.filter(|(id, node)| node.resource_type.key() == selector);
+        let iter = iter.map(|(id, node)| *id);
+        iter.collect()
     }
 }
 
