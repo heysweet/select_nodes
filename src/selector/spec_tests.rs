@@ -9,7 +9,7 @@ mod select_nodes_tests {
     use MethodName::*;
 
     #[test]
-    fn it_parses_base_raw_input() {
+    fn raw_parse_simple() {
         let raw = "asdf";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
@@ -28,7 +28,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_parses_simple_infer_path() {
+    fn raw_parse_simple_infer_path() {
         let raw = format!("{:?}", Path::new("asdf").join("*")); 
         let result = SelectionCriteria::from_single_raw_spec(&raw);
         let result = result.unwrap();
@@ -47,7 +47,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_parses_simple_infer_path_modified() {
+    fn raw_parse_simple_infer_path_modified() {
         let binding = Path::new("asdf").join("*");
         let expected_value = binding.to_str().unwrap();
         let raw = format!("@{}", expected_value);
@@ -68,7 +68,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_parses_simple_infer_fqn_parents() {
+    fn raw_parse_simple_infer_fqn_parents() {
         let raw = "+asdf";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
@@ -87,7 +87,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_parses_simple_infer_fqn_children() {
+    fn raw_parse_simple_infer_fqn_children() {
         let raw = "asdf+";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
@@ -106,7 +106,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_parses_complex_input() {
+    fn raw_parse_complex() {
         let raw = "2+config.arg.secondarg:argument_value+4";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
@@ -120,5 +120,56 @@ mod select_nodes_tests {
         assert_eq!(result.parents, true);
         assert_eq!(result.parents_depth.unwrap(), 2);
         assert_eq!(result.children_depth.unwrap(), 4);
+    }
+
+    /// you can have an empty method name (defaults to FQN/path) and you can have
+    /// an empty value, so you can also have this...
+    #[test]
+    fn raw_parse_weird() {
+        let raw = "";
+        let result = SelectionCriteria::from_single_raw_spec(raw);
+        let result = result.unwrap();
+
+        let expected_method_arguments: Vec<String> = vec![];
+
+        assert_eq!(result.raw, raw);
+        assert_eq!(result.method.key(), FQN.key());
+        assert_eq!(result.method_arguments, expected_method_arguments);
+        assert_eq!(result.value, "");
+        assert_eq!(result.childrens_parents, false);
+        assert_eq!(result.children, false);
+        assert_eq!(result.parents, false);
+        assert!(result.parents_depth.is_none());
+        assert!(result.children_depth.is_none());
+    }
+
+    #[test]
+    fn raw_raw_parse_invalid() {
+        let invalid1 = SelectionCriteria::from_single_raw_spec("invalid_method:something");
+        let invalid2 = SelectionCriteria::from_single_raw_spec("@foo+");
+        assert!(invalid1.is_err());
+        assert!(invalid2.is_err())
+    }
+
+    #[test]
+    fn intersection() {
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
+        todo!()
+    }
+
+    #[test]
+    fn difference() {
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
+        todo!()
+    }
+
+    #[test]
+    fn union() {
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_c");
+        todo!()
     }
 }

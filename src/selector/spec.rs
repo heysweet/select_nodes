@@ -156,18 +156,21 @@ impl SelectionCriteria {
         let children_depth =
             Self::get_num_from_match(captures.name("children_depth")).ok();
 
-        Ok(SelectionCriteria {
-            raw: raw.to_owned(),
-            method: parsed_method.method_name,
-            method_arguments: parsed_method.method_arguments,
-            value: value.to_owned(),
-            childrens_parents,
-            parents,
-            parents_depth,
-            children,
-            children_depth,
-            indirect_selection: indirect_selection.clone(),
-        })
+        match children && childrens_parents {
+            true => Err(format!("Invalid node spec '{}' - '@' prefix and '+' suffix are incompatible", raw)),
+            false => Ok(SelectionCriteria {
+                raw: raw.to_owned(),
+                method: parsed_method.method_name,
+                method_arguments: parsed_method.method_arguments,
+                value: value.to_owned(),
+                childrens_parents,
+                parents,
+                parents_depth,
+                children,
+                children_depth,
+                indirect_selection: indirect_selection.clone(),
+            })
+        }
     }
 
     pub fn from_single_raw_spec(raw: impl Into<String>) -> Result<SelectionCriteria, String> {
