@@ -92,11 +92,11 @@ pub struct Node {
     resource_type: String,
 }
 
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum NodeParseError {
     NoMatchingResourceType(String),
 }
+
+use NodeParseError::*;
 
 impl Node {
     pub fn new(
@@ -111,8 +111,8 @@ impl Node {
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
         match resource_type {
-            Err(NoMatchingResourceType) => {
-                Err(NodeParseError::NoMatchingResourceType("Could not parse resource".to_string()))
+            Err(_) => {
+                Err(NoMatchingResourceType("Could not parse resource".to_string()))
             },
             Ok(resource_type) => {
                 Ok(ParsedNode{
