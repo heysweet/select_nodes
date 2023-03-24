@@ -3,11 +3,7 @@
 pub mod methods;
 pub mod spec;
 
-use crate::graph::{types::{SourceDefinition, ManifestNode, Exposure, Metric}, {UniqueId, ParsedGraph}};
-
-#[derive(Copy, Clone)]
-pub union SelectorTarget { source_definition: SourceDefinition, manifest_node: ManifestNode, exposure: Exposure, metric: Metric }
-
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 enum SearchError {
     NoMatchingResourceType(String),
 }
@@ -55,23 +51,23 @@ use MethodName::*;
 impl MethodName {
     pub fn key(&self) -> &str {
         match self {
-            FQNMethod => "fqn",
-            TagMethod => "tag",
-            GroupMethod => "group",
-            SourceMethod => "source",
-            PathMethod => "path",
-            FileMethod => "file",
-            PackageMethod => "package",
-            ConfigMethod => "config",
-            TestNameMethod => "test_name",
-            TestTypeMethod => "test_type",
-            ResourceTypeMethod => "resource_type",
-            StateMethod => "state",
-            ExposureMethod => "exposure",
-            MetricMethod => "metric",
-            ResultMethod => "result",
-            SourceStatusMethod => "source_status",
-            WildcardMethod => "wildcard",
+            FQN => "fqn",
+            Tag => "tag",
+            Group => "group",
+            Source => "source",
+            Path => "path",
+            File => "file",
+            Package => "package",
+            Config => "config",
+            TestName => "test_name",
+            TestType => "test_type",
+            ResourceType => "resource_type",
+            State => "state",
+            Exposure => "exposure",
+            Metric => "metric",
+            Result => "result",
+            SourceStatus => "source_status",
+            Wildcard => "wildcard",
         }
     }
 

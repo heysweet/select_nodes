@@ -47,11 +47,6 @@ mod select_nodes_tests {
         Ok(generate_node_hash_map(nodes?))
     }
 
-    fn get_string_iter(strings: Vec<&str>) -> std::vec::IntoIter<String> {
-        let strings: Vec<String> = strings.iter().map(|str| str.to_string()).collect();
-        strings.into_iter()
-    }
-
     fn test_parents_map() -> HashMap<String, HashSet<String>> {
         let parents_map = HashMap::new();
         let parents_map = add_parents(parents_map, "A", vec!["B"]);

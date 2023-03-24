@@ -49,30 +49,42 @@ struct ParsedMethod {
 }
 
 impl ParsedMethod {
+    fn parse_method(method_args: impl Into<String>) -> Result<(MethodName, Vec<String>), String> {
+        let method_args: String = method_args.into();
+        let result = method_args.split(".");
+        let mut result: VecDeque<String> = result.map(|s| s.to_string()).collect();
+        let raw_method_name = result.pop_front();
+
+        match raw_method_name {
+            Some(raw_method_name) => {
+                let method_name = MethodName::from_string(&raw_method_name);
+                let method_name = method_name.ok_or(format!("'{}' is not a valid method name", raw_method_name))?;
+                Ok((method_name, Vec::from(result)))
+            },
+            // Should not be possible
+            None => Err("Matched empty method".to_string()),
+        }
+    }
+
     pub fn from_captures(captures: &Captures) -> Result<ParsedMethod, String> {
         let method_match = captures.name("method");
         let raw_method = SelectionCriteria::get_str_from_match(method_match);
         let value_match = captures.name("value");
         let value = SelectionCriteria::get_str_from_match(value_match);
 
-        let mut method_parts = raw_method.split(".");
-        let raw_method_name = method_parts.next();
+        let method = Self::parse_method(raw_method);
 
-        match (method_match, raw_method_name) {
+        match (method_match, method) {
             (None, _) => {
                 Ok(ParsedMethod{
                     method_name: SelectionCriteria::default_method(value),
                     method_arguments: vec![],
                 })
             },
-            (_, Some(method_name)) => {
-                let method_arguments: Vec<String> = method_parts.map(|s| s.to_string()).collect();
-                let method_name = MethodName::from_string(method_name)
-                    .ok_or(format!("'{}' is not a valid method name", method_name))?;
+            (_, Err(e)) => Err(e),
+            (_, Ok((method_name, method_arguments))) => {
                 Ok(ParsedMethod{method_name, method_arguments})
-            },
-            // Should not be possible
-            (_, None) => Err("Matched empty method".to_string())
+            }
         }
     }
 }
@@ -132,7 +144,6 @@ impl SelectionCriteria {
         let childrens_parents = captures.name("childrens_parents").is_some();
         let parents = captures.name("parents").is_some();
         let parents_depth = Self::get_num_from_match(captures.name("parents_depth")).unwrap_or_default();
-        let method = Self::get_str_from_match(captures.name("method"));
         let value = Self::get_str_from_match(captures.name("value"));
         let children = captures.name("children").is_some();
         let children_depth = Self::get_num_from_match(captures.name("children_depth")).unwrap_or_default();        
@@ -149,14 +160,6 @@ impl SelectionCriteria {
             children_depth,
             indirect_selection: indirect_selection.clone(),
         })
-    }
-
-    fn parse_method_args(method_args: impl Into<String>) -> Vec<String> {
-        let method_args: String = method_args.into();
-        let mut result = method_args.split(".");
-        let mut result: VecDeque<String> = result.map(|s| s.to_string()).collect();
-        result.pop_front();
-        Vec::from(result)
     }
 
     pub fn from_single_raw_spec(raw: impl Into<String>) -> Result<SelectionCriteria, String> {
