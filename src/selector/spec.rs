@@ -96,9 +96,9 @@ pub struct SelectionCriteria {
     pub value: String,
     pub childrens_parents: bool,
     pub parents: bool,
-    pub parents_depth: u64,
+    pub parents_depth: Option<u64>,
     pub children: bool,
-    pub children_depth: u64,
+    pub children_depth: Option<u64>,
     // TODO: Default to Eager
     pub indirect_selection: IndirectSelection,
 }
@@ -150,11 +150,11 @@ impl SelectionCriteria {
         let childrens_parents = captures.name("childrens_parents").is_some();
         let parents = captures.name("parents").is_some();
         let parents_depth =
-            Self::get_num_from_match(captures.name("parents_depth")).unwrap_or_default();
+            Self::get_num_from_match(captures.name("parents_depth")).ok();
         let value = Self::get_str_from_match(captures.name("value"));
         let children = captures.name("children").is_some();
         let children_depth =
-            Self::get_num_from_match(captures.name("children_depth")).unwrap_or_default();
+            Self::get_num_from_match(captures.name("children_depth")).ok();
 
         Ok(SelectionCriteria {
             raw: raw.to_owned(),

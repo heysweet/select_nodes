@@ -49,8 +49,8 @@ impl MethodName {
 
             ResourceType => {
                 let iter = graph.node_map.iter();
-                let iter = iter.filter(|(id, node)| node.resource_type.key() == selector);
-                let iter = iter.map(|(id, node)| id.clone());
+                let iter = iter.filter(|(_, node)| node.resource_type.key() == selector);
+                let iter = iter.map(|(id, _)| id.clone());
                 iter.collect()
             }
 
