@@ -147,8 +147,14 @@ mod select_nodes_tests {
     fn raw_raw_parse_invalid() {
         let invalid1 = SelectionCriteria::from_single_raw_spec("invalid_method:something");
         let invalid2 = SelectionCriteria::from_single_raw_spec("@foo+");
+        let invalid3 = SelectionCriteria::from_single_raw_spec("foo\n");
+        let invalid4 = SelectionCriteria::from_single_raw_spec("f\noo");
+        let invalid5 = SelectionCriteria::from_single_raw_spec("\nfoo");
         assert!(invalid1.is_err());
-        assert!(invalid2.is_err())
+        assert!(invalid2.is_err());
+        assert!(invalid3.is_err());
+        assert!(invalid4.is_err());
+        assert!(invalid5.is_err());
     }
 
     #[test]
