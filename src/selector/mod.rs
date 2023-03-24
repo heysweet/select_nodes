@@ -45,6 +45,16 @@ pub enum MethodName {
     Wildcard,
 }
 
+/// Decide if the value is probably a path. Windows has two path separators, so
+/// we should check both '\\' and '/' there.
+fn _probably_path(value: &str) -> bool {
+    if value.contains('/') {
+        true
+    } else {
+        value.contains(std::path::MAIN_SEPARATOR)
+    }
+}
+
 use MethodName::*;
 
 impl MethodName {
@@ -90,6 +100,20 @@ impl MethodName {
             "source_status" => Some(SourceStatus),
             "wildcard" => Some(Wildcard),
             _ => None,
+        }
+    }
+
+    pub fn default_method(value: impl Into<String>) -> MethodName {
+        let value = value.into();
+        let is_probably_path = _probably_path(&value);
+        let lowercase_value = value.to_lowercase();
+        let is_relevant_filetype = lowercase_value.ends_with(".sql")
+            || lowercase_value.ends_with(".py")
+            || lowercase_value.ends_with(".csv");
+        match (is_probably_path, is_relevant_filetype) {
+            (true, _) => MethodName::Path,
+            (_, true) => MethodName::File,
+            _ => MethodName::FQN,
         }
     }
 }
