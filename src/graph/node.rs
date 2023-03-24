@@ -1,5 +1,4 @@
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
-
 use crate::graph::UniqueId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -18,7 +17,7 @@ pub enum NodeType {
     Macro,
     Exposure,
     Metric,
-    Group
+    Group,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -44,7 +43,9 @@ impl NodeType {
         }
     }
 
-    pub fn from_string(resource_type: impl Into<String>) -> Result<NodeType, NoMatchingResourceType> {
+    pub fn from_string(
+        resource_type: impl Into<String>,
+    ) -> Result<NodeType, NoMatchingResourceType> {
         match resource_type.into().as_str() {
             "model" => Ok(NodeType::Model),
             "analysis" => Ok(NodeType::Analysis),
@@ -60,7 +61,7 @@ impl NodeType {
             "exposure" => Ok(NodeType::Exposure),
             "metric" => Ok(NodeType::Metric),
             "group" => Ok(NodeType::Group),
-            _ => Err(NoMatchingResourceType{}),
+            _ => Err(NoMatchingResourceType {}),
         }
     }
 }
@@ -74,7 +75,6 @@ struct UnparsedBaseNode {
     original_file_path: String,
     unique_id: String,
 }
-
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 struct BaseNode {
@@ -92,6 +92,13 @@ pub struct Node {
     resource_type: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct ParsedNode {
+    pub unique_id: UniqueId,
+    pub resource_type: NodeType,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum NodeParseError {
     NoMatchingResourceType(String),
 }
@@ -99,11 +106,11 @@ pub enum NodeParseError {
 use NodeParseError::*;
 
 impl Node {
-    pub fn new(
-        unique_id: impl Into<String>,
-        resource_type: impl Into<String>,
-    ) -> Node {
-        Node{ unique_id: unique_id.into(), resource_type: resource_type.into() }
+    pub fn new(unique_id: impl Into<String>, resource_type: impl Into<String>) -> Node {
+        Node {
+            unique_id: unique_id.into(),
+            resource_type: resource_type.into(),
+        }
     }
 
     pub fn parse(&self) -> Result<ParsedNode, NodeParseError> {
@@ -111,22 +118,13 @@ impl Node {
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
         match resource_type {
-            Err(_) => {
-                Err(NoMatchingResourceType("Could not parse resource".to_string()))
-            },
-            Ok(resource_type) => {
-                Ok(ParsedNode{
-                    unique_id: self.unique_id.clone(),
-                    resource_type,
-                })
-            }
+            Err(_) => Err(NoMatchingResourceType(
+                "Could not parse resource".to_string(),
+            )),
+            Ok(resource_type) => Ok(ParsedNode {
+                unique_id: self.unique_id.clone(),
+                resource_type,
+            }),
         }
-
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct ParsedNode {
-    pub unique_id: UniqueId,
-    pub resource_type: NodeType,
 }

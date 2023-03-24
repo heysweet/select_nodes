@@ -2,7 +2,6 @@ use crate::graph::ParsedGraph;
 
 use super::MethodName;
 
-
 use MethodName::*;
 
 impl MethodName {
@@ -10,74 +9,74 @@ impl MethodName {
         match self {
             FQN => {
                 unimplemented!()
-            },
+            }
 
             Tag => {
                 unimplemented!()
-            },
+            }
 
             Group => {
                 unimplemented!()
-            },
+            }
 
             Source => {
                 unimplemented!()
-            },
+            }
 
             Path => {
                 unimplemented!()
-            },
+            }
 
             File => {
                 unimplemented!()
-            },
+            }
 
             Package => {
                 unimplemented!()
-            },
+            }
 
             Config => {
                 unimplemented!()
-            },
+            }
 
             TestName => {
                 unimplemented!()
-            },
+            }
 
             TestType => {
                 unimplemented!()
-            },
+            }
 
             ResourceType => {
                 let iter = graph.node_map.iter();
                 let iter = iter.filter(|(id, node)| node.resource_type.key() == selector);
                 let iter = iter.map(|(id, node)| id.clone());
                 iter.collect()
-            },
+            }
 
             State => {
                 unimplemented!()
-            },
+            }
 
             Exposure => {
                 unimplemented!()
-            },
+            }
 
             Metric => {
                 unimplemented!()
-            },
+            }
 
             Result => {
                 unimplemented!()
-            },
+            }
 
             SourceStatus => {
                 unimplemented!()
-            },
+            }
 
             Wildcard => {
                 unimplemented!()
-            },
+            }
         }
     }
 }

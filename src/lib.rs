@@ -8,17 +8,23 @@ extern crate lazy_static;
 mod graph;
 mod selector;
 
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
-use graph::{ParsedGraph, UniqueId, node::ParsedNode};
+use graph::{node::ParsedNode, ParsedGraph, UniqueId};
 
 use crate::selector::spec::SelectionCriteria;
 
 pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
-    nodes.iter().map(|node| { (node.unique_id.clone(), node.clone()) }).collect()
+    nodes
+        .iter()
+        .map(|node| (node.unique_id.clone(), node.clone()))
+        .collect()
 }
 
-pub fn select_nodes(graph: ParsedGraph, raw_selector: impl Into<String>) -> Result<Vec<UniqueId>, String> {
+pub fn select_nodes(
+    graph: ParsedGraph,
+    raw_selector: impl Into<String>,
+) -> Result<Vec<UniqueId>, String> {
     let binding = raw_selector.into();
     let raw_select: &str = binding.as_str();
 

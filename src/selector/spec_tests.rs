@@ -4,7 +4,7 @@
 mod select_nodes_tests {
     use std::path::Path;
 
-    use super::super::{*};
+    use super::super::*;
 
     use MethodName::*;
 
@@ -13,7 +13,7 @@ mod select_nodes_tests {
         let raw = "asdf";
         let result = SelectionCriteria::from_single_raw_spec(raw);
         let result = result.unwrap();
-        
+
         let expected_method = FQN;
         let expected_method_arguments: Vec<String> = vec![];
 
@@ -36,7 +36,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_parses_simple_infer_path_modified() {
-        let raw = format!("@{}", Path::new("asdf").join("*").to_str().unwrap()) ;
+        let raw = format!("@{}", Path::new("asdf").join("*").to_str().unwrap());
         assert_eq!("test", "TODO");
     }
 

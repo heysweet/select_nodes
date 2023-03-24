@@ -5,8 +5,7 @@ mod spec_tests;
 use std::collections::VecDeque;
 
 /// core/dbt/graph/selector_spec.py
-
-use regex::{Regex, Captures, Match};
+use regex::{Captures, Match, Regex};
 
 use super::MethodName;
 
@@ -14,12 +13,12 @@ lazy_static! {
     static ref RAW_SELECTOR_PATTERN: Regex = {
         // TODO: Is this a functional multiline regex?
         Regex::new(
-            r"\A\
-            (?P<childrens_parents>(\@))?\
-            (?P<parents>((?P<parents_depth>(\d*))\+))?\
-            ((?P<method>([\w.]+)):)?(?P<value>(.*?))\
-            (?P<children>(\+(?P<children_depth>(\d*))))?\
-            \Z"
+"\\A\
+(?P<childrens_parents>(@))?\
+(?P<parents>((?P<parents_depth>(\\d*))\\+))?\
+((?P<method>([\\w.]+)):)?(?P<value>(.*?))\
+(?P<children>(\\+(?P<children_depth>(\\d*))))?\
+\\z"
         ).unwrap()
     };
 }
@@ -29,7 +28,7 @@ pub enum IndirectSelection {
     Eager,
     Cautious,
     Buildable,
-    Empty
+    Empty,
 }
 
 /// Decide if the value is probably a path. Windows has two path separators, so
@@ -37,8 +36,8 @@ pub enum IndirectSelection {
 fn _probably_path(value: &str) -> bool {
     if value.contains('/') {
         true
-    } else { 
-      value.contains(std::path::MAIN_SEPARATOR)
+    } else {
+        value.contains(std::path::MAIN_SEPARATOR)
     }
 }
 
@@ -58,9 +57,10 @@ impl ParsedMethod {
         match raw_method_name {
             Some(raw_method_name) => {
                 let method_name = MethodName::from_string(&raw_method_name);
-                let method_name = method_name.ok_or(format!("'{}' is not a valid method name", raw_method_name))?;
+                let method_name = method_name
+                    .ok_or(format!("'{}' is not a valid method name", raw_method_name))?;
                 Ok((method_name, Vec::from(result)))
-            },
+            }
             // Should not be possible
             None => Err("Matched empty method".to_string()),
         }
@@ -75,16 +75,15 @@ impl ParsedMethod {
         let method = Self::parse_method(raw_method);
 
         match (method_match, method) {
-            (None, _) => {
-                Ok(ParsedMethod{
-                    method_name: SelectionCriteria::default_method(value),
-                    method_arguments: vec![],
-                })
-            },
+            (None, _) => Ok(ParsedMethod {
+                method_name: SelectionCriteria::default_method(value),
+                method_arguments: vec![],
+            }),
             (_, Err(e)) => Err(e),
-            (_, Ok((method_name, method_arguments))) => {
-                Ok(ParsedMethod{method_name, method_arguments})
-            }
+            (_, Ok((method_name, method_arguments))) => Ok(ParsedMethod {
+                method_name,
+                method_arguments,
+            }),
         }
     }
 }
@@ -106,7 +105,7 @@ pub struct SelectionCriteria {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum SelectionError {
-    ParseIntError
+    ParseIntError,
 }
 
 impl SelectionCriteria {
@@ -114,7 +113,9 @@ impl SelectionCriteria {
         let value = value.into();
         let is_probably_path = _probably_path(&value);
         let lowercase_value = value.to_lowercase();
-        let is_relevant_filetype = lowercase_value.ends_with(".sql") || lowercase_value.ends_with(".py") || lowercase_value.ends_with(".csv");
+        let is_relevant_filetype = lowercase_value.ends_with(".sql")
+            || lowercase_value.ends_with(".py")
+            || lowercase_value.ends_with(".csv");
         match (is_probably_path, is_relevant_filetype) {
             (true, _) => MethodName::Path,
             (_, true) => MethodName::File,
@@ -131,22 +132,29 @@ impl SelectionCriteria {
 
     fn get_num_from_match(regex_match: Option<Match>) -> Result<u64, SelectionError> {
         match regex_match {
-            Some(r) => {
-                r.as_str().parse::<u64>().or_else(|_| Err(SelectionError::ParseIntError{ }))
-            },
-            None => Err(SelectionError::ParseIntError{ }),
+            Some(r) => r
+                .as_str()
+                .parse::<u64>()
+                .or_else(|_| Err(SelectionError::ParseIntError {})),
+            None => Err(SelectionError::ParseIntError {}),
         }
     }
 
-    fn from_captures(raw: &str, captures: &Captures, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
+    fn from_captures(
+        raw: &str,
+        captures: &Captures,
+        indirect_selection: &IndirectSelection,
+    ) -> Result<SelectionCriteria, String> {
         let parsed_method = ParsedMethod::from_captures(captures)?;
-        
+
         let childrens_parents = captures.name("childrens_parents").is_some();
         let parents = captures.name("parents").is_some();
-        let parents_depth = Self::get_num_from_match(captures.name("parents_depth")).unwrap_or_default();
+        let parents_depth =
+            Self::get_num_from_match(captures.name("parents_depth")).unwrap_or_default();
         let value = Self::get_str_from_match(captures.name("value"));
         let children = captures.name("children").is_some();
-        let children_depth = Self::get_num_from_match(captures.name("children_depth")).unwrap_or_default();        
+        let children_depth =
+            Self::get_num_from_match(captures.name("children_depth")).unwrap_or_default();
 
         Ok(SelectionCriteria {
             raw: raw.to_owned(),
@@ -166,16 +174,16 @@ impl SelectionCriteria {
         Self::from_single_spec(raw, &IndirectSelection::Eager)
     }
 
-    pub fn from_single_spec(raw: impl Into<String>, indirect_selection: &IndirectSelection) -> Result<SelectionCriteria, String> {
+    pub fn from_single_spec(
+        raw: impl Into<String>,
+        indirect_selection: &IndirectSelection,
+    ) -> Result<SelectionCriteria, String> {
         let raw: String = raw.into();
         let result = RAW_SELECTOR_PATTERN.captures(&raw);
-    
+
         match result {
-            Some(captures) => {
-                SelectionCriteria::from_captures(&raw, &captures, indirect_selection)
-            },
-            None => Err("Invalid selector spec".to_string())
+            Some(captures) => SelectionCriteria::from_captures(&raw, &captures, indirect_selection),
+            None => Err("Invalid selector spec".to_string()),
         }
     }
 }
-
