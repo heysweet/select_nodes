@@ -29,7 +29,7 @@ mod select_nodes_tests {
 
     #[test]
     fn raw_parse_simple_infer_path() {
-        let raw = format!("{:?}", Path::new("asdf").join("*")); 
+        let raw = format!("{:?}", Path::new("asdf").join("*"));
         let result = SelectionCriteria::from_single_raw_spec(&raw);
         let result = result.unwrap();
 

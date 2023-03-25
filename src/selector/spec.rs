@@ -3,7 +3,7 @@
 mod spec_tests;
 
 use indexmap::IndexMap;
-use std::{collections::VecDeque, num::ParseIntError};
+use std::{collections::VecDeque, fmt::Display, num::ParseIntError};
 
 /// core/dbt/graph/selector_spec.py
 use regex::{Captures, Match, Regex};
@@ -40,7 +40,7 @@ impl IndirectSelection {
             "cautious" => Ok(Self::Cautious),
             "buildable" => Ok(Self::Buildable),
             "empty" => Ok(Self::Empty),
-            _ => Err(format!("Invalid IndirectSelection '{}'", raw_string))
+            _ => Err(format!("Invalid IndirectSelection '{}'", raw_string)),
         }
     }
 
@@ -68,41 +68,51 @@ struct ParsedMethod {
 
 impl ParsedMethod {
     fn default_method(value: impl Into<String>) -> Self {
-        Self { method_name: MethodName::default_method(value), method_arguments: vec![] }
+        Self {
+            method_name: MethodName::default_method(value),
+            method_arguments: vec![],
+        }
     }
 }
 
 impl ParsedMethod {
-    fn parse_method_args(value: String, method: Option<String>) -> Result<ParsedMethod, String> {
+    fn parse_method_args(
+        value: String,
+        method: Option<String>,
+    ) -> Result<ParsedMethod, SelectionError> {
         match method {
             None => Ok(Self::default_method(value)),
             Some(method) => {
                 let result = method.split(".");
                 let mut result: VecDeque<String> = result.map(|s| s.to_string()).collect();
                 let raw_method_name = result.pop_front();
-        
+
                 match raw_method_name {
                     Some(raw_method_name) => {
                         let method_name = MethodName::from_string(&raw_method_name);
-                        let method_name = method_name
-                            .ok_or(format!("'{}' is not a valid method name", raw_method_name))?;
-                        Ok(ParsedMethod{method_name, method_arguments: Vec::from(result)})
+                        let method_name = method_name.ok_or(InvalidMethodError {
+                            method_name: raw_method_name.to_string(),
+                        })?;
+                        Ok(ParsedMethod {
+                            method_name,
+                            method_arguments: Vec::from(result),
+                        })
                     }
                     // Should not be possible
-                    None => Err("Matched empty method".to_string()),
+                    None => Err(MatchedEmptyMethodError {}),
                 }
             }
         }
-        
     }
 
-    pub fn from_captures(captures: &Captures) -> Result<ParsedMethod, String> {
+    pub fn from_captures(captures: &Captures) -> Result<ParsedMethod, SelectionError> {
         let method_match = captures.name("method");
         let raw_method = SelectionCriteria::get_str_from_match(method_match);
         let value_match = captures.name("value");
         let value = SelectionCriteria::get_str_from_match(value_match);
 
-        let parsed_method = Self::parse_method_args(value.to_string(), Some(raw_method.to_string()));
+        let parsed_method =
+            Self::parse_method_args(value.to_string(), Some(raw_method.to_string()));
 
         match (method_match, parsed_method) {
             (None, _) => Ok(Self::default_method(value)),
@@ -127,9 +137,49 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SelectionError {
-    ParseIntError,
+    MissingValueError { input: String },
+    ParentsDepthParseIntError { input: String, err: ParseIntError },
+    ChildrensDepthParseIntError { input: String, err: ParseIntError },
+    IncompatiblePrefixAndSuffixError { input: String },
+    FailedRegexMatchError { input: String },
+    InvalidMethodError { method_name: String },
+    MatchedEmptyMethodError {},
+}
+
+use SelectionError::*;
+
+impl Display for SelectionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MissingValueError { input } => {
+                write!(f, "'{}' is not a valid method name", input)
+            }
+            ParentsDepthParseIntError { input, err } => {
+                write!(f, "Failed to parse parents depth in '{}'", input)
+            }
+            ChildrensDepthParseIntError { input, err } => {
+                write!(f, "Failed to parse childrens depth in '{}'", input)
+            }
+            InvalidMethodError { method_name } => {
+                write!(f, "'{}' is not a valid method name", method_name)
+            }
+            IncompatiblePrefixAndSuffixError { input } => {
+                write!(
+                    f,
+                    "Invalid node spec '{}' - '@' prefix and '+' suffix are incompatible",
+                    input
+                )
+            }
+            FailedRegexMatchError { input } => {
+                write!(f, "Failed to match regex for '{}'", input)
+            }
+            MatchedEmptyMethodError {} => {
+                write!(f, "Matched empty method name")
+            }
+        }
+    }
 }
 
 impl SelectionCriteria {
@@ -140,13 +190,13 @@ impl SelectionCriteria {
         }
     }
 
-    fn get_num_from_match(regex_match: Option<Match>) -> Result<u64, SelectionError> {
+    fn get_num_from_match(regex_match: Option<Match>) -> Result<Option<u64>, ParseIntError> {
         match regex_match {
-            Some(r) => r
-                .as_str()
-                .parse::<u64>()
-                .or_else(|_| Err(SelectionError::ParseIntError {})),
-            None => Err(SelectionError::ParseIntError {}),
+            Some(r) => {
+                let num = r.as_str().parse::<u64>()?;
+                Ok(Some(num))
+            }
+            None => Ok(None),
         }
     }
 
@@ -154,21 +204,29 @@ impl SelectionCriteria {
         raw: &str,
         captures: &Captures,
         indirect_selection: &IndirectSelection,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, SelectionError> {
         let parsed_method = ParsedMethod::from_captures(captures)?;
 
         let childrens_parents = captures.name("childrens_parents").is_some();
         let parents = captures.name("parents").is_some();
-        let parents_depth =
-            Self::get_num_from_match(captures.name("parents_depth")).ok();
+        let parents_depth = Self::get_num_from_match(captures.name("parents_depth"));
         let value = Self::get_str_from_match(captures.name("value"));
         let children = captures.name("children").is_some();
-        let children_depth =
-            Self::get_num_from_match(captures.name("children_depth")).ok();
+        let children_depth = Self::get_num_from_match(captures.name("children_depth"));
 
-        match children && childrens_parents {
-            true => Err(format!("Invalid node spec '{}' - '@' prefix and '+' suffix are incompatible", raw)),
-            false => Ok(Self {
+        match (children && childrens_parents, parents_depth, children_depth) {
+            (true, _, _) => Err(IncompatiblePrefixAndSuffixError {
+                input: raw.to_string(),
+            }),
+            (_, Err(err), _) => Err(ParentsDepthParseIntError {
+                input: raw.to_string(),
+                err,
+            }),
+            (_, _, Err(err)) => Err(ChildrensDepthParseIntError {
+                input: raw.to_string(),
+                err,
+            }),
+            (false, Ok(parents_depth), Ok(children_depth)) => Ok(Self {
                 raw: raw.to_owned(),
                 method: parsed_method.method_name,
                 method_arguments: parsed_method.method_arguments,
@@ -179,37 +237,46 @@ impl SelectionCriteria {
                 children,
                 children_depth,
                 indirect_selection: indirect_selection.clone(),
-            })
+            }),
         }
     }
 
-    pub fn from_single_raw_spec(raw: impl Into<String>) -> Result<Self, String> {
+    pub fn from_single_raw_spec(raw: impl Into<String>) -> Result<Self, SelectionError> {
         Self::from_single_spec(raw, &IndirectSelection::default())
     }
 
     pub fn from_single_spec(
         raw: impl Into<String>,
         indirect_selection: &IndirectSelection,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, SelectionError> {
         let raw: String = raw.into();
         let result = RAW_SELECTOR_PATTERN.captures(&raw);
 
         match result {
             Some(captures) => Self::from_captures(&raw, &captures, indirect_selection),
-            None => Err("Invalid selector spec".to_string()),
+            None => Err(FailedRegexMatchError {
+                input: raw.to_string(),
+            }),
         }
     }
 
-    fn _selection_criteria_with_value(raw: String, index_map: IndexMap<String, String>, indirect_selection: Option<impl Into<String>>, value: &String, parents_depth: Option<usize>, children_depth: Option<usize>) -> Result<Self, String> {
+    fn _selection_criteria_with_value(
+        raw: String,
+        index_map: &IndexMap<String, String>,
+        indirect_selection: Option<impl Into<String>>,
+        value: &String,
+        parents_depth: Option<usize>,
+        children_depth: Option<usize>,
+    ) -> Result<Self, SelectionError> {
         // WARN! This is a dictionary in the python impl, we expect a string instead.
         let method_args = index_map.get("method_args");
 
         let default_indirect_selection = indirect_selection;
         let indirect_selection = index_map.get("indirect_selection");
-        
+
         todo!()
         // match (method_args, parents_depth, children_depth, default_indirect_selection, indirect_selection) {
-        //     (_, _, _, _, _) => 
+        //     (_, _, _, _, _) =>
         //     (Some(e), _, _, _, _) => Err(e),
         //     (_, _, _, _, _) => {
         //         ()
@@ -223,13 +290,17 @@ impl SelectionCriteria {
         match raw_str {
             None => Ok(None),
             Some(raw_str) => {
-                let int: usize = raw_str.parse()?;
+                let int = raw_str.parse::<usize>()?;
                 Ok(Some(int))
             }
         }
     }
 
-    pub fn selection_criteria_from_indexmap(raw: impl Into<String>, index_map: IndexMap<String, String>, indirect_selection: Option<impl Into<String>>) -> Result<Self, String> {
+    pub fn selection_criteria_from_indexmap(
+        raw: impl Into<String>,
+        index_map: &IndexMap<String, String>,
+        indirect_selection: Option<impl Into<String>>,
+    ) -> Result<Self, SelectionError> {
         let raw: String = raw.into();
         let value = index_map.get("value");
 
@@ -239,10 +310,27 @@ impl SelectionCriteria {
         let children_depth = Self::_match_to_int(children_depth);
 
         match (value, parents_depth, children_depth) {
-            (None, _, _) => Err(format!("Invalid node spec '{}'", raw)),
-            (_, Err(_), _) => Err(format!("Invalid node spec '{}'", raw)),
-            (_, _, Err(_)) => Err(format!("Invalid node spec '{}'", raw)),
-            (Some(value), Ok(parents_depth), Ok(children_depth)) => Self::_selection_criteria_with_value(raw, index_map, indirect_selection, value, parents_depth, children_depth)
+            (None, _, _) => Err(MissingValueError {
+                input: raw.to_string(),
+            }),
+            (_, Err(err), _) => Err(ParentsDepthParseIntError {
+                input: raw.to_string(),
+                err,
+            }),
+            (_, _, Err(err)) => Err(ChildrensDepthParseIntError {
+                input: raw.to_string(),
+                err,
+            }),
+            (Some(value), Ok(parents_depth), Ok(children_depth)) => {
+                Self::_selection_criteria_with_value(
+                    raw,
+                    index_map,
+                    indirect_selection,
+                    value,
+                    parents_depth,
+                    children_depth,
+                )
+            }
         }
     }
 }

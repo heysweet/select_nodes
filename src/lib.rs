@@ -11,6 +11,7 @@ mod selector;
 use std::collections::HashMap;
 
 use graph::{node::ParsedNode, ParsedGraph, UniqueId};
+use selector::spec::SelectionError;
 
 use crate::selector::spec::SelectionCriteria;
 
@@ -24,7 +25,7 @@ pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, Parse
 pub fn select_nodes(
     graph: ParsedGraph,
     raw_selector: impl Into<String>,
-) -> Result<Vec<UniqueId>, String> {
+) -> Result<Vec<UniqueId>, SelectionError> {
     let binding = raw_selector.into();
     let raw_select: &str = binding.as_str();
 
