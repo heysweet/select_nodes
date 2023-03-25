@@ -158,7 +158,7 @@ pub enum SelectionError {
     InvalidMethodError { method_name: String },
     MatchedEmptyMethodError {},
     InvalidIndirectSelectionError { input: String },
-    BoolInputError { key:String, input:String, err: ParseBoolError },
+    BoolInputError { key:String },
 }
 
 use SelectionError::*;
@@ -194,7 +194,7 @@ impl Display for SelectionError {
             InvalidIndirectSelectionError { input } => {
                 write!(f, "Invalid IndirectSelection input '{}'", input)
             }
-            BoolInputError { input, err, key } => {
+            BoolInputError { key } => {
                 write!(f, "'{}' field was provided and was not string literal `true` or `false`", key)
             },
         }
@@ -318,7 +318,7 @@ impl SelectionCriteria {
                 let bool_from_str = bool::from_str(str);
                 match bool_from_str {
                     Ok(parsed_bool) => Ok(Some(parsed_bool)),
-                    Err(err) => Err(BoolInputError{ key: key.to_string(), input: str.clone(), err }),
+                    Err(_) => Err(BoolInputError{ key: key.to_string() }),
                 }
             },
         }

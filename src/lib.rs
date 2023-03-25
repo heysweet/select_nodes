@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use graph::{node::ParsedNode, ParsedGraph, UniqueId};
 use selector::methods::SearchError;
 
-use crate::selector::spec::SelectionCriteria;
+pub use crate::selector::spec::SelectionCriteria;
 
 pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
     nodes
