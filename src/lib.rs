@@ -10,8 +10,10 @@ mod selector;
 
 use std::collections::HashMap;
 
-use graph::{node::ParsedNode, ParsedGraph, UniqueId};
+use graph::{node::ParsedNode, UniqueId};
 use selector::methods::SearchError;
+
+pub use crate::graph::ParsedGraph;
 
 pub use crate::selector::spec::SelectionCriteria;
 

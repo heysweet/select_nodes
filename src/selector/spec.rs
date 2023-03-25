@@ -3,7 +3,7 @@
 mod spec_tests;
 
 use indexmap::IndexMap;
-use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::{FromStr, ParseBoolError}};
+use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::FromStr};
 
 /// core/dbt/graph/selector_spec.py
 use regex::{Captures, Match, Regex};
@@ -158,7 +158,7 @@ pub enum SelectionError {
     InvalidMethodError { method_name: String },
     MatchedEmptyMethodError {},
     InvalidIndirectSelectionError { input: String },
-    BoolInputError { key:String },
+    BoolInputError { key: String },
 }
 
 use SelectionError::*;
@@ -195,8 +195,12 @@ impl Display for SelectionError {
                 write!(f, "Invalid IndirectSelection input '{}'", input)
             }
             BoolInputError { key } => {
-                write!(f, "'{}' field was provided and was not string literal `true` or `false`", key)
-            },
+                write!(
+                    f,
+                    "'{}' field was provided and was not string literal `true` or `false`",
+                    key
+                )
+            }
         }
     }
 }
@@ -212,8 +216,14 @@ impl SelectionCriteria {
     fn get_num_from_match(regex_match: Option<Match>) -> Result<Option<usize>, ParseIntError> {
         match regex_match {
             Some(r) => {
-                let num = r.as_str().parse::<usize>()?;
-                Ok(Some(num))
+                let r = r.as_str();
+                match r {
+                    "" => Ok(None),
+                    _ => {
+                        let num = r.parse::<usize>()?;
+                        Ok(Some(num))
+                    }
+                }
             }
             None => Ok(None),
         }
@@ -318,9 +328,11 @@ impl SelectionCriteria {
                 let bool_from_str = bool::from_str(str);
                 match bool_from_str {
                     Ok(parsed_bool) => Ok(Some(parsed_bool)),
-                    Err(_) => Err(BoolInputError{ key: key.to_string() }),
+                    Err(_) => Err(BoolInputError {
+                        key: key.to_string(),
+                    }),
                 }
-            },
+            }
         }
     }
 
@@ -350,12 +362,18 @@ impl SelectionCriteria {
 
                 let default_indirect_selection = default_indirect_selection.unwrap_or_default();
                 let indirect_selection = index_map.get("indirect_selection");
-                let indirect_selection =
-                    IndirectSelection::from_string_option(indirect_selection)?.unwrap_or(default_indirect_selection);
+                let indirect_selection = IndirectSelection::from_string_option(indirect_selection)?
+                    .unwrap_or(default_indirect_selection);
 
-                let childrens_parents = Self::_get_optional_bool("childrens_parents", index_map.get("childrens_parents"))?.unwrap_or_default();
-                let parents = Self::_get_optional_bool("parents", index_map.get("parents"))?.unwrap_or_default();
-                let children = Self::_get_optional_bool("children", index_map.get("children"))?.unwrap_or_default();
+                let childrens_parents = Self::_get_optional_bool(
+                    "childrens_parents",
+                    index_map.get("childrens_parents"),
+                )?
+                .unwrap_or_default();
+                let parents = Self::_get_optional_bool("parents", index_map.get("parents"))?
+                    .unwrap_or_default();
+                let children = Self::_get_optional_bool("children", index_map.get("children"))?
+                    .unwrap_or_default();
 
                 Ok(Self {
                     raw: raw.into(),
