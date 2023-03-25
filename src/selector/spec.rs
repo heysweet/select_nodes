@@ -76,7 +76,7 @@ impl ParsedMethod {
 }
 
 impl ParsedMethod {
-    fn parse_method_args(
+    pub fn from_value_and_method(
         value: String,
         method: Option<String>,
     ) -> Result<ParsedMethod, SelectionError> {
@@ -112,7 +112,7 @@ impl ParsedMethod {
         let value = SelectionCriteria::get_str_from_match(value_match);
 
         let parsed_method =
-            Self::parse_method_args(value.to_string(), Some(raw_method.to_string()));
+            Self::from_value_and_method(value.to_string(), Some(raw_method.to_string()));
 
         match (method_match, parsed_method) {
             (None, _) => Ok(Self::default_method(value)),
@@ -130,9 +130,9 @@ pub struct SelectionCriteria {
     pub value: String,
     pub childrens_parents: bool,
     pub parents: bool,
-    pub parents_depth: Option<u64>,
+    pub parents_depth: Option<usize>,
     pub children: bool,
-    pub children_depth: Option<u64>,
+    pub children_depth: Option<usize>,
     // TODO: Default to Eager
     pub indirect_selection: IndirectSelection,
 }
@@ -190,10 +190,10 @@ impl SelectionCriteria {
         }
     }
 
-    fn get_num_from_match(regex_match: Option<Match>) -> Result<Option<u64>, ParseIntError> {
+    fn get_num_from_match(regex_match: Option<Match>) -> Result<Option<usize>, ParseIntError> {
         match regex_match {
             Some(r) => {
-                let num = r.as_str().parse::<u64>()?;
+                let num = r.as_str().parse::<usize>()?;
                 Ok(Some(num))
             }
             None => Ok(None),
@@ -260,32 +260,6 @@ impl SelectionCriteria {
         }
     }
 
-    fn _selection_criteria_with_value(
-        raw: String,
-        index_map: &IndexMap<String, String>,
-        indirect_selection: Option<impl Into<String>>,
-        value: &String,
-        parents_depth: Option<usize>,
-        children_depth: Option<usize>,
-    ) -> Result<Self, SelectionError> {
-        // WARN! This is a dictionary in the python impl, we expect a string instead.
-        let method_args = index_map.get("method_args");
-
-        let default_indirect_selection = indirect_selection;
-        let indirect_selection = index_map.get("indirect_selection");
-
-        todo!()
-        // match (method_args, parents_depth, children_depth, default_indirect_selection, indirect_selection) {
-        //     (_, _, _, _, _) =>
-        //     (Some(e), _, _, _, _) => Err(e),
-        //     (_, _, _, _, _) => {
-        //         ()
-        //     }
-        // }
-
-        // Ok(Self{ raw: raw.into(), method: todo!(), method_arguments: todo!(), value: todo!(), childrens_parents: todo!(), parents: todo!(), parents_depth: todo!(), children: todo!(), children_depth: todo!(), indirect_selection: todo!() })
-    }
-
     fn _match_to_int(raw_str: Option<&String>) -> Result<Option<usize>, ParseIntError> {
         match raw_str {
             None => Ok(None),
@@ -335,14 +309,28 @@ impl SelectionCriteria {
             None => Err(MissingValueError {
                 input: raw.to_string(),
             }),
-            Some(value) => Self::_selection_criteria_with_value(
-                raw,
-                index_map,
-                indirect_selection,
-                value,
-                parents_depth,
-                children_depth,
-            ),
+            Some(value) => {
+                // WARN! This is a dictionary in the python impl, we expect a string instead.
+                let method_args = index_map.get("method_args");
+                let method = ParsedMethod::from_value_and_method(value.to_string(), method_args.cloned())?;
+
+                let default_indirect_selection = indirect_selection;
+                let indirect_selection = index_map.get("indirect_selection");
+                let indirect_selection = IndirectSelection::from_string(indirect_selection);
+
+                Ok(Self {
+                    raw: raw.into(),
+                    method: method.method_name,
+                    method_arguments: method.method_arguments,
+                    value: value.to_string(),
+                    childrens_parents: todo!(),
+                    parents: todo!(),
+                    parents_depth,
+                    children: todo!(),
+                    children_depth,
+                    indirect_selection: todo!(),
+                })
+            }
         }
     }
 }

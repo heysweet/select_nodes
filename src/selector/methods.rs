@@ -6,7 +6,6 @@ use super::{spec::SelectionError, MethodName};
 
 use MethodName::*;
 
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SearchError {
     SelectionError { selection_error: SelectionError },

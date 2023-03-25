@@ -33,8 +33,6 @@ pub fn select_nodes(
 
     match selection_criteria {
         Err(selection_error) => Err(SearchError::SelectionError { selection_error }),
-        Ok(selection_criteria) => {
-            Ok(selection_criteria.method.search(&graph, raw_select)?)
-        },
+        Ok(selection_criteria) => Ok(selection_criteria.method.search(&graph, raw_select)?),
     }
 }
