@@ -46,12 +46,12 @@ impl IndirectSelection {
 
     /// Returns the Default value of IndirectSelection if `None`, or parses for a strict
     /// key match with any IndirectSelection.
-    pub fn from_string_with_default(
+    pub fn from_string_option(
         raw: Option<impl Into<String>>,
-    ) -> Result<Self, SelectionError> {
+    ) -> Result<Option<Self>, SelectionError> {
         match raw {
-            Some(raw) => Self::from_string(raw),
-            None => Ok(Self::default()),
+            Some(raw) => Ok(Some(Self::from_string(raw)?)),
+            None => Ok(None),
         }
     }
 
@@ -324,10 +324,11 @@ impl SelectionCriteria {
         }
     }
 
+    /// `default_indirect_selection` is only used if 'indirect_selection' not found in index_map
     pub fn selection_criteria_from_indexmap(
         raw: impl Into<String>,
         index_map: &IndexMap<String, String>,
-        indirect_selection: Option<impl Into<String>>,
+        default_indirect_selection: Option<IndirectSelection>,
     ) -> Result<Self, SelectionError> {
         let raw: String = raw.into();
         let value = index_map.get("value");
@@ -347,10 +348,10 @@ impl SelectionCriteria {
                 let method =
                     ParsedMethod::from_value_and_method(value.to_string(), method_args.cloned())?;
 
-                let default_indirect_selection = indirect_selection;
+                let default_indirect_selection = default_indirect_selection.unwrap_or_default();
                 let indirect_selection = index_map.get("indirect_selection");
                 let indirect_selection =
-                    IndirectSelection::from_string_with_default(indirect_selection)?;
+                    IndirectSelection::from_string_option(indirect_selection)?.unwrap_or(default_indirect_selection);
 
                 let childrens_parents = Self::_get_optional_bool("childrens_parents", index_map.get("childrens_parents"))?.unwrap_or_default();
                 let parents = Self::_get_optional_bool("parents", index_map.get("parents"))?.unwrap_or_default();
