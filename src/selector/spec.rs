@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "spec_tests.rs"]
-mod spec_tests;
+mod graph_selector_spec_tests;
 
 use indexmap::IndexMap;
 use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::FromStr};

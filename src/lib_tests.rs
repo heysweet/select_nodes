@@ -39,9 +39,9 @@ mod select_nodes_tests {
 
     fn get_test_node_map() -> Result<HashMap<String, ParsedNode>, NodeParseError> {
         let nodes = vec![
-            Node::new("A", "foo"),
-            Node::new("B", "resource"),
-            Node::new("C", "oops"),
+            Node::new("A", "model"),
+            Node::new("B", "analysis"),
+            Node::new("C", "test"),
         ];
         let nodes: Result<Vec<ParsedNode>, NodeParseError> =
             nodes.iter().map(|node| node.parse()).collect();
