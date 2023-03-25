@@ -157,10 +157,10 @@ impl Display for SelectionError {
                 write!(f, "'{}' is not a valid method name", input)
             }
             ParentsDepthParseIntError { input, err } => {
-                write!(f, "Failed to parse parents depth in '{}'", input)
+                write!(f, "Failed to parse parents depth in '{}': {}", input, err)
             }
             ChildrensDepthParseIntError { input, err } => {
-                write!(f, "Failed to parse childrens depth in '{}'", input)
+                write!(f, "Failed to parse childrens depth in '{}': {}", input, err)
             }
             InvalidMethodError { method_name } => {
                 write!(f, "'{}' is not a valid method name", method_name)
@@ -296,6 +296,28 @@ impl SelectionCriteria {
         }
     }
 
+    fn parse_parents_depth(raw_str: Option<&String>) -> Result<Option<usize>, SelectionError> {
+        match (Self::_match_to_int(raw_str), raw_str) {
+            (Ok(depth), _) => Ok(depth),
+            (_, None) => Ok(None),
+            (Err(err), Some(raw_str)) => Err(ParentsDepthParseIntError {
+                input: raw_str.to_string(),
+                err,
+            }),
+        }
+    }
+
+    fn parse_childrens_depth(raw_str: Option<&String>) -> Result<Option<usize>, SelectionError> {
+        match (Self::_match_to_int(raw_str), raw_str) {
+            (Ok(depth), _) => Ok(depth),
+            (_, None) => Ok(None),
+            (Err(err), Some(raw_str)) => Err(ChildrensDepthParseIntError {
+                input: raw_str.to_string(),
+                err,
+            }),
+        }
+    }
+
     pub fn selection_criteria_from_indexmap(
         raw: impl Into<String>,
         index_map: &IndexMap<String, String>,
@@ -305,32 +327,22 @@ impl SelectionCriteria {
         let value = index_map.get("value");
 
         let parents_depth = index_map.get("parents_depth");
-        let parents_depth = Self::_match_to_int(parents_depth);
+        let parents_depth = Self::parse_parents_depth(parents_depth)?;
         let children_depth = index_map.get("children_depth");
-        let children_depth = Self::_match_to_int(children_depth);
+        let children_depth = Self::parse_childrens_depth(children_depth)?;
 
-        match (value, parents_depth, children_depth) {
-            (None, _, _) => Err(MissingValueError {
+        match value {
+            None => Err(MissingValueError {
                 input: raw.to_string(),
             }),
-            (_, Err(err), _) => Err(ParentsDepthParseIntError {
-                input: raw.to_string(),
-                err,
-            }),
-            (_, _, Err(err)) => Err(ChildrensDepthParseIntError {
-                input: raw.to_string(),
-                err,
-            }),
-            (Some(value), Ok(parents_depth), Ok(children_depth)) => {
-                Self::_selection_criteria_with_value(
-                    raw,
-                    index_map,
-                    indirect_selection,
-                    value,
-                    parents_depth,
-                    children_depth,
-                )
-            }
+            Some(value) => Self::_selection_criteria_with_value(
+                raw,
+                index_map,
+                indirect_selection,
+                value,
+                parents_depth,
+                children_depth,
+            ),
         }
     }
 }
