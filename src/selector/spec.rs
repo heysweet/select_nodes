@@ -3,7 +3,7 @@
 mod spec_tests;
 
 use indexmap::IndexMap;
-use std::{collections::VecDeque, fmt::Display, num::ParseIntError};
+use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::{FromStr, ParseBoolError}};
 
 /// core/dbt/graph/selector_spec.py
 use regex::{Captures, Match, Regex};
@@ -33,14 +33,25 @@ pub enum IndirectSelection {
 }
 
 impl IndirectSelection {
-    pub fn from_string(raw: impl Into<String>) -> Result<Self, String> {
+    pub fn from_string(raw: impl Into<String>) -> Result<Self, SelectionError> {
         let raw_string = raw.into();
         match raw_string.as_str() {
             "eager" => Ok(Self::Eager),
             "cautious" => Ok(Self::Cautious),
             "buildable" => Ok(Self::Buildable),
             "empty" => Ok(Self::Empty),
-            _ => Err(format!("Invalid IndirectSelection '{}'", raw_string)),
+            _ => Err(InvalidIndirectSelectionError { input: raw_string }),
+        }
+    }
+
+    /// Returns the Default value of IndirectSelection if `None`, or parses for a strict
+    /// key match with any IndirectSelection.
+    pub fn from_string_with_default(
+        raw: Option<impl Into<String>>,
+    ) -> Result<Self, SelectionError> {
+        match raw {
+            Some(raw) => Self::from_string(raw),
+            None => Ok(Self::default()),
         }
     }
 
@@ -146,6 +157,8 @@ pub enum SelectionError {
     FailedRegexMatchError { input: String },
     InvalidMethodError { method_name: String },
     MatchedEmptyMethodError {},
+    InvalidIndirectSelectionError { input: String },
+    BoolInputError { key:String, input:String, err: ParseBoolError },
 }
 
 use SelectionError::*;
@@ -178,6 +191,12 @@ impl Display for SelectionError {
             MatchedEmptyMethodError {} => {
                 write!(f, "Matched empty method name")
             }
+            InvalidIndirectSelectionError { input } => {
+                write!(f, "Invalid IndirectSelection input '{}'", input)
+            }
+            BoolInputError { input, err, key } => {
+                write!(f, "'{}' field was provided and was not string literal `true` or `false`", key)
+            },
         }
     }
 }
@@ -292,6 +311,19 @@ impl SelectionCriteria {
         }
     }
 
+    fn _get_optional_bool(key: &str, str: Option<&String>) -> Result<Option<bool>, SelectionError> {
+        match str {
+            None => Ok(None),
+            Some(str) => {
+                let bool_from_str = bool::from_str(str);
+                match bool_from_str {
+                    Ok(parsed_bool) => Ok(Some(parsed_bool)),
+                    Err(err) => Err(BoolInputError{ key: key.to_string(), input: str.clone(), err }),
+                }
+            },
+        }
+    }
+
     pub fn selection_criteria_from_indexmap(
         raw: impl Into<String>,
         index_map: &IndexMap<String, String>,
@@ -312,23 +344,29 @@ impl SelectionCriteria {
             Some(value) => {
                 // WARN! This is a dictionary in the python impl, we expect a string instead.
                 let method_args = index_map.get("method_args");
-                let method = ParsedMethod::from_value_and_method(value.to_string(), method_args.cloned())?;
+                let method =
+                    ParsedMethod::from_value_and_method(value.to_string(), method_args.cloned())?;
 
                 let default_indirect_selection = indirect_selection;
                 let indirect_selection = index_map.get("indirect_selection");
-                let indirect_selection = IndirectSelection::from_string(indirect_selection);
+                let indirect_selection =
+                    IndirectSelection::from_string_with_default(indirect_selection)?;
+
+                let childrens_parents = Self::_get_optional_bool("childrens_parents", index_map.get("childrens_parents"))?.unwrap_or_default();
+                let parents = Self::_get_optional_bool("parents", index_map.get("parents"))?.unwrap_or_default();
+                let children = Self::_get_optional_bool("children", index_map.get("children"))?.unwrap_or_default();
 
                 Ok(Self {
                     raw: raw.into(),
                     method: method.method_name,
                     method_arguments: method.method_arguments,
                     value: value.to_string(),
-                    childrens_parents: todo!(),
-                    parents: todo!(),
+                    childrens_parents,
+                    parents,
                     parents_depth,
-                    children: todo!(),
+                    children,
                     children_depth,
-                    indirect_selection: todo!(),
+                    indirect_selection,
                 })
             }
         }
