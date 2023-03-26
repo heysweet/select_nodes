@@ -36,15 +36,43 @@ impl Display for SearchError {
 }
 
 impl MethodName {
+    fn flatten_node_parts(fqn: &Vec<String>) -> Vec<String> {
+        fqn.iter()
+            .flat_map(|segment| segment.split("."))
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    // TODO from selector_methods.py
+    fn is_selected_node(fqn: &Vec<String>, node_selector: &str) -> bool {
+        let last = fqn.last();
+        let flat_fqn = Self::flatten_node_parts(fqn);
+        let selector_parts: Vec<&str> = node_selector.split(".").collect();
+        let is_flat_fqn_too_short = flat_fqn.len() < selector_parts.len();
+        todo!()
+    }
+
+    fn is_node_match(&self, qualified_name: &str, fqn: &Vec<String>) -> bool {
+        true
+    }
+
     pub fn search(
         &self,
         graph: &ParsedGraph,
         selector: &str,
     ) -> core::result::Result<Vec<String>, SearchError> {
         match self {
-            FQN => {
-                unimplemented!()
-            }
+            FQN => Ok(graph
+                .node_map
+                .iter()
+                .filter_map(|(id, node)| {
+                    if self.is_node_match(selector, &node.fqn) {
+                        Some(id.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<String>>()),
 
             Tag => {
                 unimplemented!()
