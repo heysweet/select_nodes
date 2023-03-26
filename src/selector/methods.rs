@@ -123,13 +123,21 @@ impl MethodName {
                 unimplemented!()
             }
 
-            File => Ok(graph.node_map.iter().filter_map(|(id, node)| {
-                if Path::new(&node.original_file_path).file_name()?.to_str().eq(&Some(selector)) {
-                    Some(id.to_string())
-                } else {
-                    None
-                }
-            }).collect::<Vec<String>>()),
+            File => Ok(graph
+                .node_map
+                .iter()
+                .filter_map(|(id, node)| {
+                    if Path::new(&node.original_file_path)
+                        .file_name()?
+                        .to_str()
+                        .eq(&Some(selector))
+                    {
+                        Some(id.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<String>>()),
 
             Package => {
                 unimplemented!()
