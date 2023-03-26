@@ -89,6 +89,23 @@ impl MethodName {
         }
     }
 
+    fn fnmatch(path: &str, selector: &str) -> bool {
+        let file_name = Path::new(path).file_name();
+        if file_name.is_none() {
+            return false;
+        }
+        let path = file_name.unwrap().to_str();
+        if path.is_none() {
+            return false;
+        }
+
+        let fnmatch = fnmatch_regex::glob_to_regex(path.unwrap());
+        match fnmatch {
+            Ok(fnmatch) => fnmatch.is_match(selector),
+            Err(_) => false,
+        }
+    }
+
     pub fn search(
         &self,
         graph: &ParsedGraph,
@@ -127,11 +144,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    if Path::new(&node.original_file_path)
-                        .file_name()?
-                        .to_str()
-                        .eq(&Some(selector))
-                    {
+                    if Self::fnmatch(&node.original_file_path, selector) {
                         Some(id.to_string())
                     } else {
                         None
@@ -139,9 +152,17 @@ impl MethodName {
                 })
                 .collect::<Vec<String>>()),
 
-            Package => {
-                unimplemented!()
-            }
+            Package => Ok(graph
+                .node_map
+                .iter()
+                .filter_map(|(id, node)| {
+                    if Self::fnmatch(&node.package_name, selector) {
+                        Some(id.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<String>>()),
 
             Config => {
                 unimplemented!()
