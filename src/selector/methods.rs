@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, path::Path};
 
 use crate::graph::{node::NodeType, ParsedGraph};
 
@@ -72,7 +72,7 @@ impl MethodName {
                     };
                 }
             }
-            if (flat_fqn[i] != part) {
+            if flat_fqn[i] != part {
                 return false;
             }
         }
@@ -100,7 +100,7 @@ impl MethodName {
                 .iter()
                 .filter_map(|(id, node)| {
                     if self.is_node_match(selector, &node.fqn) {
-                        Some(id.clone())
+                        Some(id.to_string())
                     } else {
                         None
                     }
@@ -123,9 +123,13 @@ impl MethodName {
                 unimplemented!()
             }
 
-            File => {
-                unimplemented!()
-            }
+            File => Ok(graph.node_map.iter().filter_map(|(id, node)| {
+                if Path::new(&node.original_file_path).file_name()?.to_str().eq(&Some(selector)) {
+                    Some(id.to_string())
+                } else {
+                    None
+                }
+            }).collect::<Vec<String>>()),
 
             Package => {
                 unimplemented!()

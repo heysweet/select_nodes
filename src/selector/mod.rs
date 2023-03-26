@@ -26,12 +26,19 @@ impl AccessType {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum MethodName {
+    /// Yield all nodes in the graph that match the selector.
     FQN,
+    /// Yields nodes from included that have the specified tag.
     Tag,
+    /// Yields nodes from included in the specified group.
     Group,
+    /// Yields nodes from included are the specified source.
     Source,
+    /// Yields nodes from included that match the given path.
     Path,
+    /// Yields nodes from included that match the given file name.
     File,
+    /// Yields nodes from included that have the specified package.
     Package,
     Config,
     TestName,
