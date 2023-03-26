@@ -119,7 +119,7 @@ impl MethodName {
                 unimplemented!()
             }
 
-            Path => {
+            Self::Path => {
                 unimplemented!()
             }
 
