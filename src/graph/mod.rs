@@ -4,13 +4,13 @@ pub mod types;
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 use std::collections::{HashMap, HashSet};
 
-use self::node::ParsedNode;
+use self::node::GraphNode;
 
 pub use String as UniqueId;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParsedGraph {
-    pub node_map: HashMap<UniqueId, ParsedNode>,
+    pub node_map: HashMap<UniqueId, GraphNode>,
     pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     /// A map of nodes to its set of parents
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
@@ -41,7 +41,7 @@ impl ParsedGraph {
     }
 
     pub fn new(
-        node_map: HashMap<UniqueId, ParsedNode>,
+        node_map: HashMap<UniqueId, GraphNode>,
         parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
         let children_map = Self::reverse_edges(&parents_map);

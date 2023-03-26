@@ -2,7 +2,7 @@
 mod select_nodes_tests {
     use std::collections::HashSet;
 
-    use crate::graph::node::{Node, ParsedNodeError};
+    use crate::graph::node::{GraphNode, NodeCreateError};
 
     use super::super::*;
 
@@ -37,16 +37,43 @@ mod select_nodes_tests {
         }
     }
 
-    fn get_test_node_map() -> Result<HashMap<String, ParsedNode>, ParsedNodeError> {
+    fn get_test_node_map() -> Result<HashMap<String, GraphNode>, NodeCreateError> {
         let nodes = vec![
-            Node::new("id_a", "name_a", "model", "pkg_a", "path_a", "opath_a"),
-            Node::new("id_b", "name_b", "analysis", "pkg_b", "path_b", "opath_b"),
-            Node::new("id_c", "name_c", "test", "pkg_c", "path_c", "opath_c"),
+            GraphNode::new(
+                ["id_a"].to_vec(),
+                "id_a",
+                "name_a",
+                "model",
+                "pkg_a",
+                "path_a",
+                "opath_a",
+            ),
+            GraphNode::new(
+                ["id_b"].to_vec(),
+                "id_b",
+                "name_b",
+                "analysis",
+                "pkg_b",
+                "path_b",
+                "opath_b",
+            ),
+            GraphNode::new(
+                ["id_c"].to_vec(),
+                "id_c",
+                "name_c",
+                "test",
+                "pkg_c",
+                "path_c",
+                "opath_c",
+            ),
         ];
-        let nodes: Result<Vec<ParsedNode>, ParsedNodeError> =
-            nodes.iter().map(|node| node.parse()).collect();
+        let nodes: Vec<GraphNode> = nodes
+            .iter()
+            .filter(|n| n.is_ok())
+            .map(|node| node.clone().unwrap())
+            .collect();
 
-        Ok(generate_node_hash_map(nodes?))
+        Ok(generate_node_hash_map(nodes))
     }
 
     fn test_parents_map() -> HashMap<String, HashSet<String>> {
@@ -88,7 +115,8 @@ mod select_nodes_tests {
 
         let result = select_nodes(graph, "my_model");
 
-        let expected: Vec<ParsedNode> = vec![ParsedNode {
+        let expected: Vec<GraphNode> = vec![GraphNode {
+            fqn: ["test".to_string()].to_vec(),
             unique_id: "test".to_string(),
             resource_type: Analysis,
             name: "name".to_string(),
@@ -106,7 +134,7 @@ mod select_nodes_tests {
 
         let result = select_nodes(graph, "other_model");
 
-        let expected: Vec<ParsedNode> = vec![];
+        let expected: Vec<GraphNode> = vec![];
         let does_match = matches!(result, Ok(expected));
         assert!(does_match);
     }

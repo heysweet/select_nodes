@@ -10,16 +10,16 @@ mod selector;
 
 use std::collections::HashMap;
 
-use graph::{node::ParsedNode, UniqueId};
+use graph::UniqueId;
 use selector::methods::SearchError;
 
 pub use crate::graph::ParsedGraph;
 
 pub use crate::selector::spec::SelectionCriteria;
 
-pub use crate::graph::node::Node;
+pub use crate::graph::node::GraphNode;
 
-pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
+pub fn generate_node_hash_map(nodes: Vec<GraphNode>) -> HashMap<UniqueId, GraphNode> {
     nodes
         .iter()
         .map(|node| (node.unique_id.clone(), node.clone()))

@@ -67,37 +67,8 @@ impl NodeType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct UnparsedBaseNode {
-    name: String,
-    resource_type: String,
-    package_name: String,
-    path: String,
-    original_file_path: String,
-    unique_id: String,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct BaseNode {
-    name: String,
-    resource_type: NodeType,
-    package_name: String,
-    path: String,
-    original_file_path: String,
-    unique_id: UniqueId,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Node {
-    unique_id: String,
-    name: String,
-    resource_type: String,
-    package_name: String,
-    path: String,
-    original_file_path: String,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct ParsedNode {
+/// All nodes or node-like objects in this file should have these properties
+pub struct BaseNodeData {
     pub unique_id: UniqueId,
     pub resource_type: NodeType,
     pub name: String,
@@ -107,47 +78,69 @@ pub struct ParsedNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum ParsedNodeError {
-    NoMatchingResourceType(String),
+/// Nodes in the DAG
+pub struct GraphNode {
+    pub unique_id: UniqueId,
+    pub resource_type: NodeType,
+    pub name: String,
+    pub package_name: String,
+    pub path: String,
+    pub original_file_path: String,
+    /// Macro and Documentation don't have fqn
+    pub fqn: Vec<String>,
 }
 
-use indexmap::IndexMap;
-use ParsedNodeError::*;
+pub trait GraphNodeData {}
 
+use indexmap::IndexMap;
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum NodeCreateError {
     MissingFieldError { field_name: String },
+    NoMatchingResourceType { resource_type: String },
 }
 
 use NodeCreateError::*;
 
-impl Node {
-    pub fn from_indexmap(index_map: &IndexMap<String, String>) -> Result<Self, NodeCreateError> {
+impl GraphNode {
+    pub fn from_indexmap(
+        fqn: Vec<String>,
+        index_map: &IndexMap<String, String>,
+    ) -> Result<Self, NodeCreateError> {
+        let resource_type = Self::get_required_key(index_map, "resource_type")?;
         Ok(Self {
             unique_id: Self::get_required_key(index_map, "unique_id")?,
             name: Self::get_required_key(index_map, "name")?,
-            resource_type: Self::get_required_key(index_map, "resource_type")?,
+            resource_type: NodeType::from_string(&resource_type)
+                .or_else(|_| Err(NodeCreateError::NoMatchingResourceType { resource_type }))?,
             package_name: Self::get_required_key(index_map, "package_name")?,
             path: Self::get_required_key(index_map, "path")?,
             original_file_path: Self::get_required_key(index_map, "original_file_path")?,
+            fqn,
         })
     }
 
     pub fn new(
+        fqn: Vec<impl Into<String>>,
         unique_id: impl Into<String>,
         name: impl Into<String>,
         resource_type: impl Into<String>,
         package_name: impl Into<String>,
         path: impl Into<String>,
         original_file_path: impl Into<String>,
-    ) -> Node {
-        Node {
+    ) -> Result<Self, NodeCreateError> {
+        let resource_type: String = resource_type.into();
+        let resource_type = NodeType::from_string(&resource_type)
+            .or_else(|_| Err(NodeCreateError::NoMatchingResourceType { resource_type }))?;
+        Ok(Self {
+            fqn: fqn.into_iter().map(|s| s.into()).collect(),
             unique_id: unique_id.into(),
             name: name.into(),
-            resource_type: resource_type.into(),
+            resource_type,
             package_name: package_name.into(),
             path: path.into(),
             original_file_path: original_file_path.into(),
-        }
+        })
     }
 
     fn get_required_key(
@@ -160,24 +153,5 @@ impl Node {
                 field_name: key.to_string(),
             })?
             .to_string())
-    }
-
-    pub fn parse(&self) -> Result<ParsedNode, ParsedNodeError> {
-        let resource_type = NodeType::from_string(self.resource_type.clone());
-        // TODO: we're not validating this is unique, and cannot from
-        // a parse on Node itself
-        match resource_type {
-            Err(_) => Err(NoMatchingResourceType(
-                "Could not parse resource".to_string(),
-            )),
-            Ok(resource_type) => Ok(ParsedNode {
-                unique_id: self.unique_id.clone(),
-                name: self.name.clone(),
-                resource_type,
-                package_name: self.package_name.clone(),
-                path: self.path.clone(),
-                original_file_path: self.original_file_path.clone(),
-            }),
-        }
     }
 }
