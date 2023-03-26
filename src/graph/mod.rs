@@ -5,6 +5,8 @@ pub mod types;
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 use std::collections::{HashMap, HashSet};
 
+use crate::selector::methods::SearchError;
+
 use self::node::GraphNode;
 
 pub use String as UniqueId;
@@ -16,6 +18,14 @@ pub struct ParsedGraph {
     /// A map of nodes to its set of parents
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
 }
+
+enum SelectionError {
+    NoMatchingResourceType(String),
+    NodeNotInGraph{ id: String },
+    SearchError(SearchError)
+}
+
+use SelectionError::*;
 
 impl ParsedGraph {
     fn reverse_edges(
@@ -75,6 +85,43 @@ impl ParsedGraph {
             node_map: node_map,
             parents_map,
             children_map,
+        }
+    }
+
+    pub fn select_childrens_parents(&self, selected: &HashSet<UniqueId>) -> HashSet<UniqueId> {
+        let ancestors_for = self.select_children()
+    }
+
+    fn bfs_edges(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>, reverse: bool) -> Result<HashSet<UniqueId>, SelectionError> {
+        match (self.node_map.contains_key(node_id), max_depth) {
+            (false, _) => Err(NodeNotInGraph { id: node_id.to_string() }),
+            (true, None) | (true, Some(0)) => {
+                Ok(*selected)
+            },
+            (true, Some(max_depth)) => {
+                let edges = if reverse { self.parents_map } else { self.children_map };
+                let vanguard = edges.get(node_id).unwrap_or(&HashSet::new());
+                let to_traverse = edges.iter().filter(|(id, edges)| !selected.contains(*id));
+                for (next_id, _edges) in to_traverse {
+                    self.descendants(selected, next_id, Some(max_depth - 1));
+                }
+                Ok(*selected)
+            }
+        }
+    }
+
+    fn descendants(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
+        self.bfs_edges(selected, node_id, max_depth, false)
+    }
+
+    fn ancestors(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
+        self.bfs_edges(selected, node_id, max_depth, true)
+    }
+
+    pub fn select_children(&self, selected: &HashSet<UniqueId>, max_depth: Option<usize>) {
+        let descendants: HashSet<UniqueId> = HashSet::new();
+        for node_id in selected {
+            descendants.insert(self.descendants(node_id, max_depth))
         }
     }
 }

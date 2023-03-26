@@ -4,7 +4,6 @@ use crate::UniqueId;
 
 use crate::SelectionCriteria;
 use crate::selector::methods::SearchError;
-use crate::selector::spec::SelectionError;
 
 pub struct NodeSelector {
     graph: ParsedGraph,
@@ -12,7 +11,8 @@ pub struct NodeSelector {
 
 impl NodeSelector {
     pub fn select_included(&self, included_nodes: HashSet<UniqueId>, spec: SelectionCriteria) -> Result<HashSet<UniqueId>, SearchError> {
-        let result = spec.method.search(&self.graph.filter(&included_nodes), spec)?
+        let result = spec.method.search(&self.graph.filter(&included_nodes), &spec.value)?;
+        Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
     }
 
     /// Given the set of models selected by the explicit part of the
@@ -21,6 +21,10 @@ impl NodeSelector {
     /// overlap with the selected set).
     pub fn collect_specified_neighbors(&self, spec: SelectionCriteria, selected: HashSet<UniqueId>) -> HashSet<UniqueId> {
         let additional = HashSet::new();
+        
+        if spec.childrens_parents {
+
+        }
         todo!()
     } 
 }
