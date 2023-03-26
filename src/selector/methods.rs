@@ -144,11 +144,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    if Self::fnmatch(&node.original_file_path, selector) {
-                        Some(id.to_string())
-                    } else {
-                        None
-                    }
+                    Self::fnmatch(&node.original_file_path, selector).then(|| id.to_string())
                 })
                 .collect::<Vec<String>>()),
 
@@ -156,11 +152,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    if Self::fnmatch(&node.package_name, selector) {
-                        Some(id.to_string())
-                    } else {
-                        None
-                    }
+                    Self::fnmatch(&node.package_name, selector).then(|| id.to_string())
                 })
                 .collect::<Vec<String>>()),
 
