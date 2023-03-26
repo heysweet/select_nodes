@@ -10,6 +10,7 @@ mod selector;
 
 use std::collections::HashMap;
 
+use graph::selector::NodeSelector;
 use graph::UniqueId;
 use selector::methods::SearchError;
 
@@ -32,6 +33,8 @@ pub fn select_nodes(
 ) -> Result<Vec<UniqueId>, SearchError> {
     let binding = raw_selector.into();
     let raw_select: &str = binding.as_str();
+
+    // NodeSelector;
 
     let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select));
 

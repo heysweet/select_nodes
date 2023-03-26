@@ -1,4 +1,5 @@
 pub mod node;
+pub mod selector;
 pub mod types;
 
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
@@ -40,7 +41,32 @@ impl ParsedGraph {
         target_map
     }
 
-    pub fn new(
+    // Returns a subset of the Graph, does not modify original Graph.
+    pub fn filter(&self, included: &HashSet<UniqueId>) -> Self {
+        let node_map = self
+        .node_map
+        .clone();
+        node_map.retain(|id, _node| included.contains(id));
+        ParsedGraph {
+            node_map,
+            children_map: self.children_map.clone(),
+            parents_map: self.children_map.clone(),
+        }
+    }
+
+    pub fn from_children(
+        node_map: HashMap<UniqueId, GraphNode>,
+        children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> Self {
+        let parents_map = Self::reverse_edges(&children_map);
+        ParsedGraph {
+            node_map: node_map,
+            parents_map,
+            children_map,
+        }
+    }
+
+    pub fn from_parents(
         node_map: HashMap<UniqueId, GraphNode>,
         parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {

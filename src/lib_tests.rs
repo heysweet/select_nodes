@@ -84,7 +84,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_handles_an_empty_collection_of_nodes() {
-        let graph = ParsedGraph::new(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "my_model");
 
@@ -94,7 +94,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_the_matching_node() {
-        let graph = ParsedGraph::new(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "my_model");
 
@@ -111,7 +111,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_filters_to_the_matching_node() {
-        let graph = ParsedGraph::new(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "my_model");
 
@@ -130,7 +130,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_no_node_if_not_matching() {
-        let graph = ParsedGraph::new(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "other_model");
 
