@@ -89,31 +89,80 @@ struct BaseNode {
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Node {
     unique_id: String,
+    name: String,
     resource_type: String,
+    package_name: String,
+    path: String,
+    original_file_path: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ParsedNode {
     pub unique_id: UniqueId,
     pub resource_type: NodeType,
+    pub name: String,
+    pub package_name: String,
+    pub path: String,
+    pub original_file_path: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum NodeParseError {
+pub enum ParsedNodeError {
     NoMatchingResourceType(String),
 }
 
-use NodeParseError::*;
+use indexmap::IndexMap;
+use ParsedNodeError::*;
+
+pub enum NodeCreateError {
+    MissingFieldError { field_name: String },
+}
+
+use NodeCreateError::*;
 
 impl Node {
-    pub fn new(unique_id: impl Into<String>, resource_type: impl Into<String>) -> Node {
+    pub fn from_indexmap(index_map: &IndexMap<String, String>) -> Result<Self, NodeCreateError> {
+        Ok(Self {
+            unique_id: Self::get_required_key(index_map, "unique_id")?,
+            name: Self::get_required_key(index_map, "name")?,
+            resource_type: Self::get_required_key(index_map, "resource_type")?,
+            package_name: Self::get_required_key(index_map, "package_name")?,
+            path: Self::get_required_key(index_map, "path")?,
+            original_file_path: Self::get_required_key(index_map, "original_file_path")?,
+        })
+    }
+
+    pub fn new(
+        unique_id: impl Into<String>,
+        name: impl Into<String>,
+        resource_type: impl Into<String>,
+        package_name: impl Into<String>,
+        path: impl Into<String>,
+        original_file_path: impl Into<String>,
+    ) -> Node {
         Node {
             unique_id: unique_id.into(),
+            name: name.into(),
             resource_type: resource_type.into(),
+            package_name: package_name.into(),
+            path: path.into(),
+            original_file_path: original_file_path.into(),
         }
     }
 
-    pub fn parse(&self) -> Result<ParsedNode, NodeParseError> {
+    fn get_required_key(
+        index_map: &IndexMap<String, String>,
+        key: &str,
+    ) -> Result<String, NodeCreateError> {
+        Ok(index_map
+            .get(key)
+            .ok_or_else(|| MissingFieldError {
+                field_name: key.to_string(),
+            })?
+            .to_string())
+    }
+
+    pub fn parse(&self) -> Result<ParsedNode, ParsedNodeError> {
         let resource_type = NodeType::from_string(self.resource_type.clone());
         // TODO: we're not validating this is unique, and cannot from
         // a parse on Node itself
@@ -123,7 +172,11 @@ impl Node {
             )),
             Ok(resource_type) => Ok(ParsedNode {
                 unique_id: self.unique_id.clone(),
+                name: self.name.clone(),
                 resource_type,
+                package_name: self.package_name.clone(),
+                path: self.path.clone(),
+                original_file_path: self.original_file_path.clone(),
             }),
         }
     }

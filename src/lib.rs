@@ -17,6 +17,8 @@ pub use crate::graph::ParsedGraph;
 
 pub use crate::selector::spec::SelectionCriteria;
 
+pub use crate::graph::node::Node;
+
 pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
     nodes
         .iter()

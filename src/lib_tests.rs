@@ -2,7 +2,7 @@
 mod select_nodes_tests {
     use std::collections::HashSet;
 
-    use crate::graph::node::{Node, NodeParseError};
+    use crate::graph::node::{Node, ParsedNodeError};
 
     use super::super::*;
 
@@ -37,13 +37,13 @@ mod select_nodes_tests {
         }
     }
 
-    fn get_test_node_map() -> Result<HashMap<String, ParsedNode>, NodeParseError> {
+    fn get_test_node_map() -> Result<HashMap<String, ParsedNode>, ParsedNodeError> {
         let nodes = vec![
-            Node::new("A", "model"),
-            Node::new("B", "analysis"),
-            Node::new("C", "test"),
+            Node::new("id_a", "name_a", "model", "pkg_a", "path_a", "opath_a"),
+            Node::new("id_b", "name_b", "analysis", "pkg_b", "path_b", "opath_b"),
+            Node::new("id_c", "name_c", "test", "pkg_c", "path_c", "opath_c"),
         ];
-        let nodes: Result<Vec<ParsedNode>, NodeParseError> =
+        let nodes: Result<Vec<ParsedNode>, ParsedNodeError> =
             nodes.iter().map(|node| node.parse()).collect();
 
         Ok(generate_node_hash_map(nodes?))
@@ -91,6 +91,10 @@ mod select_nodes_tests {
         let expected: Vec<ParsedNode> = vec![ParsedNode {
             unique_id: "test".to_string(),
             resource_type: Analysis,
+            name: "name".to_string(),
+            package_name: "pkg".to_string(),
+            path: "path".to_string(),
+            original_file_path: "opath".to_string(),
         }];
         let does_match = matches!(result, Ok(expected));
         assert!(does_match);
