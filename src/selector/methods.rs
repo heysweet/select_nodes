@@ -36,6 +36,7 @@ impl Display for SearchError {
 }
 
 impl MethodName {
+    /// Dots in model names act as namespace separators
     fn flatten_node_parts(fqn: &Vec<String>) -> Vec<String> {
         fqn.iter()
             .flat_map(|segment| segment.split("."))
@@ -46,10 +47,35 @@ impl MethodName {
     // TODO from selector_methods.py
     fn is_selected_node(fqn: &Vec<String>, node_selector: &str) -> bool {
         let last = fqn.last();
+        if last == Some(&node_selector.to_string()) {
+            return true;
+        }
         let flat_fqn = Self::flatten_node_parts(fqn);
         let selector_parts: Vec<&str> = node_selector.split(".").collect();
-        let is_flat_fqn_too_short = flat_fqn.len() < selector_parts.len();
-        todo!()
+        if flat_fqn.len() < selector_parts.len() {
+            return false;
+        }
+        let wildcard = vec!['*', '?', '[', ']'];
+        for (i, part) in selector_parts.into_iter().enumerate() {
+            for char in &wildcard {
+                if part.contains(*char) {
+                    // PYTHON
+                    // # If we have a wildcard, we need to make sure that the selector matches the
+                    // # rest of the fqn, this is 100% backwards compatible with the old behavior of
+                    // # encountering a wildcard but more expressive in naturally allowing you to
+                    // # match the rest of the fqn with more advanced patterns
+                    // return fnmatch(
+                    //     ".".join(flat_fqn[slurp_from_ix:]),
+                    //     ".".join(node_selector.split(".")[slurp_from_ix:]),
+                    // )
+                    todo!()
+                }
+            }
+            if (flat_fqn[i] != part) {
+                return false
+            }
+        }
+        return true
     }
 
     fn is_node_match(&self, qualified_name: &str, fqn: &Vec<String>) -> bool {
