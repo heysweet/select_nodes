@@ -44,7 +44,6 @@ impl MethodName {
             .collect()
     }
 
-    // TODO from selector_methods.py
     fn is_selected_node(fqn: &Vec<String>, node_selector: &str) -> bool {
         let last = fqn.last();
         if last == Some(&node_selector.to_string()) {
