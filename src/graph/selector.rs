@@ -1,17 +1,23 @@
-use std::collections::HashSet;
 use crate::ParsedGraph;
 use crate::UniqueId;
+use std::collections::HashSet;
 
-use crate::SelectionCriteria;
 use crate::selector::methods::SearchError;
+use crate::SelectionCriteria;
 
 pub struct NodeSelector {
     graph: ParsedGraph,
 }
 
 impl NodeSelector {
-    pub fn select_included(&self, included_nodes: HashSet<UniqueId>, spec: SelectionCriteria) -> Result<HashSet<UniqueId>, SearchError> {
-        let result = spec.method.search(&self.graph.filter(&included_nodes), &spec.value)?;
+    pub fn select_included(
+        &self,
+        included_nodes: HashSet<UniqueId>,
+        spec: SelectionCriteria,
+    ) -> Result<HashSet<UniqueId>, SearchError> {
+        let result = spec
+            .method
+            .search(&self.graph.filter(&included_nodes), &spec.value)?;
         Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
     }
 
@@ -19,12 +25,14 @@ impl NodeSelector {
     /// selector (like "tag:foo"), apply the modifiers on the spec ("+"/"@").
     /// Return the set of additional nodes that should be collected (which may
     /// overlap with the selected set).
-    pub fn collect_specified_neighbors(&self, spec: SelectionCriteria, selected: HashSet<UniqueId>) -> HashSet<UniqueId> {
+    pub fn collect_specified_neighbors(
+        &self,
+        spec: SelectionCriteria,
+        selected: HashSet<UniqueId>,
+    ) -> HashSet<UniqueId> {
         let additional = HashSet::new();
-        
-        if spec.childrens_parents {
 
-        }
+        if spec.childrens_parents {}
         todo!()
-    } 
+    }
 }
