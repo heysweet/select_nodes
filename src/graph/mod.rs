@@ -88,40 +88,57 @@ impl ParsedGraph {
         }
     }
 
-    pub fn select_childrens_parents(&self, selected: &HashSet<UniqueId>) -> HashSet<UniqueId> {
-        let ancestors_for = self.select_children()
+    /// All the children and the parents of those children
+    pub fn select_childrens_parents(&self, selected: &mut HashSet<UniqueId>) -> HashSet<UniqueId> {
+        let ancestors_for = self.select_children(selected, None);
     }
 
-    fn bfs_edges(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>, reverse: bool) -> Result<HashSet<UniqueId>, SelectionError> {
-        match (self.node_map.contains_key(node_id), max_depth) {
-            (false, _) => Err(NodeNotInGraph { id: node_id.to_string() }),
-            (true, None) | (true, Some(0)) => {
-                Ok(*selected)
+    fn bfs_edges(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>, reverse: bool) -> HashSet<UniqueId> {
+        match max_depth {
+            Some(0) => {
+                *selected
             },
-            (true, Some(max_depth)) => {
+            None | Some(_) => {
                 let edges = if reverse { self.parents_map } else { self.children_map };
                 let vanguard = edges.get(node_id).unwrap_or(&HashSet::new());
                 let to_traverse = edges.iter().filter(|(id, edges)| !selected.contains(*id));
                 for (next_id, _edges) in to_traverse {
-                    self.descendants(selected, next_id, Some(max_depth - 1));
+                    self.descendants(selected, next_id, max_depth.and_then(|d| Some(d - 1)));
                 }
-                Ok(*selected)
+                *selected
             }
         }
     }
 
+    /// Returns all nodes reachable from `node` in `graph`
     fn descendants(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
-        self.bfs_edges(selected, node_id, max_depth, false)
-    }
-
-    fn ancestors(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
-        self.bfs_edges(selected, node_id, max_depth, true)
-    }
-
-    pub fn select_children(&self, selected: &HashSet<UniqueId>, max_depth: Option<usize>) {
-        let descendants: HashSet<UniqueId> = HashSet::new();
-        for node_id in selected {
-            descendants.insert(self.descendants(node_id, max_depth))
+        match self.node_map.contains_key(node_id) {
+            false => Err(NodeNotInGraph { id: node_id.to_string() }),
+            true => Ok(self.bfs_edges(selected, node_id, max_depth, false))
         }
+    }
+
+    /// Returns all nodes having a path to `node` in `graph`
+    fn ancestors(&self, selected: &mut HashSet<UniqueId>, node_id: &UniqueId, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
+        match self.node_map.contains_key(node_id) {
+            false => Err(NodeNotInGraph { id: node_id.to_string() }),
+            true => Ok(self.bfs_edges(selected, node_id, max_depth, true))
+        }
+    }
+
+    pub fn select_children(&self, selected: &mut HashSet<UniqueId>, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
+        let descendants: HashSet<UniqueId> = HashSet::new();
+        for node_id in selected.iter() {
+            self.descendants(selected, node_id, max_depth)?;
+        }
+        Ok(*selected)
+    }
+
+    pub fn select_parents(&self, selected: &mut HashSet<UniqueId>, max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
+        let ancestors: HashSet<UniqueId> = HashSet::new();
+        for node_id in selected.iter() {
+            self.ancestors(selected, node_id, max_depth)?;
+        }
+        Ok(*selected)
     }
 }
