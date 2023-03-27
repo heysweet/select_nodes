@@ -10,7 +10,7 @@ mod selector;
 
 use std::collections::HashMap;
 
-use graph::selector::NodeSelector;
+use graph::node_selector::NodeSelector;
 use graph::UniqueId;
 use selector::methods::SearchError;
 

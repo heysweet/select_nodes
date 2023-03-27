@@ -12,7 +12,7 @@ pub struct NodeSelector {
 }
 
 impl NodeSelector {
-    pub fn select_included(
+    fn select_included(
         &self,
         included_nodes: HashSet<UniqueId>,
         spec: SelectionCriteria,
@@ -21,6 +21,23 @@ impl NodeSelector {
             .method
             .search(&self.graph.filter(&included_nodes), &spec.value)?;
         Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
+    }
+
+    /// Get all nodes specified by the single selection criteria.
+    ///
+    /// - collect the directly included nodes
+    /// - find their specified relatives
+    /// - perform any selector-specific expansion
+    fn get_nodes_from_criteria(&self, included_nodes: HashSet<UniqueId>, spec: SelectionCriteria) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SearchError> {
+        // TODO: SelectorReportInvalidSelector in py has better error
+        let collected: HashSet<UniqueId> = self.select_included(included_nodes, spec)?;
+        todo!()
+        // match spec.indirect_selection {
+        //     Empty => Ok((collected, HashSet::new())),
+        //     indirect_selection => {
+        //         todo!()
+        //     }
+        // }
     }
 
     /// Given the set of models selected by the explicit part of the
@@ -32,7 +49,7 @@ impl NodeSelector {
         spec: SelectionCriteria,
         selected: HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let mut additional = HashSet::new();
+        let mut additional: HashSet<UniqueId> = HashSet::new();
         let graph = &self.graph;
 
         if spec.childrens_parents {
