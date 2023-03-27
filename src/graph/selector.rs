@@ -5,6 +5,8 @@ use std::collections::HashSet;
 use crate::selector::methods::SearchError;
 use crate::SelectionCriteria;
 
+use super::SelectionError;
+
 pub struct NodeSelector {
     graph: ParsedGraph,
 }
@@ -29,10 +31,20 @@ impl NodeSelector {
         &self,
         spec: SelectionCriteria,
         selected: HashSet<UniqueId>,
-    ) -> HashSet<UniqueId> {
-        let additional = HashSet::new();
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut additional = HashSet::new();
+        let graph = &self.graph;
 
-        if spec.childrens_parents {}
-        todo!()
+        if spec.childrens_parents {
+            additional.extend(graph.select_childrens_parents(&selected)?);
+        } else {
+            if spec.children {
+                additional.extend(graph.select_children(&selected, None)?);
+            }
+            if spec.parents {
+                additional.extend(graph.select_parents(&selected, None)?);
+            }
+        }
+        Ok(additional)
     }
 }

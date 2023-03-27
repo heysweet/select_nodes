@@ -19,7 +19,7 @@ pub struct ParsedGraph {
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
 }
 
-enum SelectionError {
+pub enum SelectionError {
     NoMatchingResourceType(String),
     NodeNotInGraph { id: String },
     SearchError(SearchError),
@@ -53,7 +53,7 @@ impl ParsedGraph {
 
     // Returns a subset of the Graph, does not modify original Graph.
     pub fn filter(&self, included: &HashSet<UniqueId>) -> Self {
-        let node_map = self.node_map.clone();
+        let mut node_map = self.node_map.clone();
         node_map.retain(|id, _node| included.contains(id));
         ParsedGraph {
             node_map,
@@ -86,17 +86,6 @@ impl ParsedGraph {
         }
     }
 
-    /// For the current selected nodes and the current selected nodes'
-    /// descendents, select all ancestors.
-    pub fn select_childrens_parents(
-        &self,
-        selected: &mut HashSet<UniqueId>,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let mut ancestors_for = self.select_children(selected, None)?;
-        ancestors_for.extend(ancestors_for.into_iter());
-        self.select_parents(&mut ancestors_for, None)
-    }
-
     fn bfs_edges(
         &self,
         selected: &HashSet<UniqueId>,
@@ -104,37 +93,31 @@ impl ParsedGraph {
         node_id: &UniqueId,
         max_depth: Option<usize>,
         reverse: bool,
-    ) -> HashSet<UniqueId> {
+    ) {
         match max_depth {
-            Some(0) => *output,
+            Some(0) => (),
             None | Some(_) => {
+                let immutable_output = output.clone();
                 let edges = if reverse {
-                    self.parents_map
+                    &self.parents_map
                 } else {
-                    self.children_map
+                    &self.children_map
                 };
-                let vanguard = edges.get(node_id).unwrap_or(&HashSet::new());
-                let to_traverse = edges
+                let empty_set = HashSet::new();
+                let vanguard = edges.get(node_id).unwrap_or(&empty_set);
+                let to_traverse = vanguard
                     .iter()
-                    .filter(|(id, edges)| !selected.contains(*id) && !output.contains(*id));
-                for (next_id, _edges) in to_traverse {
+                    .filter(|id| !selected.contains(*id) && !immutable_output.contains(*id));
+                for next_id in to_traverse {
                     output.insert(next_id.to_string());
-                    match reverse {
-                        true => self.ancestors(
-                            selected,
-                            output,
-                            next_id,
-                            max_depth.and_then(|d| Some(d - 1)),
-                        ),
-                        false => self.descendants(
-                            selected,
-                            output,
-                            next_id,
-                            max_depth.and_then(|d| Some(d - 1)),
-                        ),
-                    };
+                    self.bfs_edges(
+                        selected,
+                        output,
+                        next_id,
+                        max_depth.and_then(|d| Some(d - 1)),
+                        reverse
+                    );
                 }
-                *output
             }
         }
     }
@@ -151,7 +134,10 @@ impl ParsedGraph {
             false => Err(NodeNotInGraph {
                 id: node_id.to_string(),
             }),
-            true => Ok(self.bfs_edges(selected, output, node_id, max_depth, false)),
+            true => {
+                self.bfs_edges(selected, output, node_id, max_depth, false);
+                Ok(output.clone())
+            },
         }
     }
 
@@ -167,7 +153,10 @@ impl ParsedGraph {
             false => Err(NodeNotInGraph {
                 id: node_id.to_string(),
             }),
-            true => Ok(self.bfs_edges(selected, output, node_id, max_depth, true)),
+            true => {
+                self.bfs_edges(selected, output, node_id, max_depth, true);
+                Ok(output.clone())
+            },
         }
     }
 
@@ -177,7 +166,7 @@ impl ParsedGraph {
         selected: &HashSet<UniqueId>,
         max_depth: Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let descendants: HashSet<UniqueId> = HashSet::new();
+        let mut descendants: HashSet<UniqueId> = HashSet::new();
         for node_id in selected.iter() {
             self.descendants(selected, &mut descendants, node_id, max_depth)?;
         }
@@ -187,13 +176,25 @@ impl ParsedGraph {
     /// Returns set of all ancestors up to a max-depth
     pub fn select_parents(
         &self,
-        selected: &mut HashSet<UniqueId>,
+        selected: &HashSet<UniqueId>,
         max_depth: Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let ancestors: HashSet<UniqueId> = HashSet::new();
+        let mut ancestors: HashSet<UniqueId> = HashSet::new();
         for node_id in selected.iter() {
             self.ancestors(selected, &mut ancestors, node_id, max_depth)?;
         }
         Ok(ancestors)
     }
+
+    /// For the current selected nodes and the current selected nodes'
+    /// descendents, select all ancestors.
+    pub fn select_childrens_parents(
+        &self,
+        selected: &HashSet<UniqueId>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut ancestors_for = self.select_children(selected, None)?;
+        ancestors_for.extend(ancestors_for.clone().into_iter());
+        self.select_parents(&mut ancestors_for, None)
+    }
+
 }
