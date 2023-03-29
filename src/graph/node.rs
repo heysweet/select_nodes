@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
 use crate::graph::UniqueId;
 
@@ -154,4 +156,11 @@ impl GraphNode {
             })?
             .to_string())
     }
+}
+
+pub fn generate_node_hash_map(nodes: Vec<GraphNode>) -> HashMap<UniqueId, GraphNode> {
+    nodes
+        .iter()
+        .map(|node| (node.unique_id.clone(), node.clone()))
+        .collect()
 }
