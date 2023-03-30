@@ -149,7 +149,7 @@ pub struct SelectionCriteria {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SelectionError {
+pub enum FOOSelectionError {
     MissingValueError { input: String },
     ParentsDepthParseIntError { input: String, err: ParseIntError },
     ChildrensDepthParseIntError { input: String, err: ParseIntError },
@@ -161,40 +161,41 @@ pub enum SelectionError {
     BoolInputError { key: String },
 }
 
-use SelectionError::*;
+use Interface::SelectionError;
+use Interface::SelectionError::*;
 
 impl Display for SelectionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MissingValueError { input } => {
+            MissingValueError(input) => {
                 write!(f, "'{}' is not a valid method name", input)
             }
-            ParentsDepthParseIntError { input, err } => {
-                write!(f, "Failed to parse parents depth in '{}': {}", input, err)
+            ParentsDepthParseIntError(input) => {
+                write!(f, "Failed to parse parents depth in '{}'.", input)
             }
-            ChildrensDepthParseIntError { input, err } => {
-                write!(f, "Failed to parse childrens depth in '{}': {}", input, err)
+            ChildrensDepthParseIntError(input) => {
+                write!(f, "Failed to parse childrens depth in '{}'.", input)
             }
-            InvalidMethodError { method_name } => {
+            InvalidMethodError(method_name) => {
                 write!(f, "'{}' is not a valid method name", method_name)
             }
-            IncompatiblePrefixAndSuffixError { input } => {
+            IncompatiblePrefixAndSuffixError(input) => {
                 write!(
                     f,
                     "Invalid node spec '{}' - '@' prefix and '+' suffix are incompatible",
                     input
                 )
             }
-            FailedRegexMatchError { input } => {
+            FailedRegexMatchError(input) => {
                 write!(f, "Failed to match regex for '{}'", input)
             }
-            MatchedEmptyMethodError {} => {
+            MatchedEmptyMethodError => {
                 write!(f, "Matched empty method name")
             }
-            InvalidIndirectSelectionError { input } => {
+            InvalidIndirectSelectionError(input) => {
                 write!(f, "Invalid IndirectSelection input '{}'", input)
             }
-            BoolInputError { key } => {
+            BoolInputError(key) => {
                 write!(
                     f,
                     "'{}' field was provided and was not string literal `true` or `false`",

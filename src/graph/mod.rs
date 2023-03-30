@@ -5,7 +5,8 @@ pub mod types;
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 use std::collections::{HashMap, HashSet};
 
-use crate::selector::methods::SearchError;
+use crate::interface::SelectionError;
+use crate::interface::SelectionError::*;
 
 use self::node::GraphNode;
 
@@ -18,14 +19,6 @@ pub struct ParsedGraph {
     /// A map of nodes to its set of parents
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
 }
-
-pub enum SelectionError {
-    NoMatchingResourceType(String),
-    NodeNotInGraph { id: String },
-    SearchError(SearchError),
-}
-
-use SelectionError::*;
 
 impl ParsedGraph {
     fn reverse_edges(
@@ -115,7 +108,7 @@ impl ParsedGraph {
                         output,
                         next_id,
                         max_depth.and_then(|d| Some(d - 1)),
-                        reverse
+                        reverse,
                     );
                 }
             }
@@ -131,13 +124,11 @@ impl ParsedGraph {
         max_depth: Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         match self.node_map.contains_key(node_id) {
-            false => Err(NodeNotInGraph {
-                id: node_id.to_string(),
-            }),
+            false => Err(NoMatchingResourceType(node_id.to_string())),
             true => {
                 self.bfs_edges(selected, output, node_id, max_depth, false);
                 Ok(output.clone())
-            },
+            }
         }
     }
 
@@ -150,13 +141,11 @@ impl ParsedGraph {
         max_depth: Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         match self.node_map.contains_key(node_id) {
-            false => Err(NodeNotInGraph {
-                id: node_id.to_string(),
-            }),
+            false => Err(NodeNotInGraph(node_id.to_string())),
             true => {
                 self.bfs_edges(selected, output, node_id, max_depth, true);
                 Ok(output.clone())
-            },
+            }
         }
     }
 
@@ -196,5 +185,4 @@ impl ParsedGraph {
         ancestors_for.extend(ancestors_for.clone().into_iter());
         self.select_parents(&mut ancestors_for, None)
     }
-
 }

@@ -3,37 +3,9 @@ use std::{fmt::Display, path::Path};
 use crate::graph::{node::NodeType, ParsedGraph};
 
 use super::{spec::SelectionError, MethodName};
+use crate::interface::SelectionError::*;
 
 use MethodName::*;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SearchError {
-    SelectionError { selection_error: SelectionError },
-    // TODO(SourceStatusSelectorMethod)
-    NoPreviousStateError {},
-    // TODO(SourceStatusSelectorMethod)
-    NoCurrentSourcesError {},
-    NoMatchingResourceTypeError { selector: String },
-}
-
-use SearchError::*;
-
-impl Display for SearchError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            NoPreviousStateError {} => {
-                write!(f, "No previous state comparison freshness results")
-            }
-            NoCurrentSourcesError {} => {
-                write!(f, "No current state comparison freshness results")
-            }
-            NoMatchingResourceTypeError { selector } => {
-                write!(f, "Invalid resource_type selector '{}'", selector)
-            }
-            SearchError::SelectionError { selection_error } => write!(f, "{}", selection_error),
-        }
-    }
-}
 
 impl MethodName {
     /// Dots in model names act as namespace separators

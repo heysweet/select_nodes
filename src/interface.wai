@@ -37,19 +37,34 @@ variant resource-type-filter {
     some(list<node-type>),
 }
 
-variant node-create-error {
+variant selector-create-error {
     missing-field(string),
     no-matching-resource-type(string),
 }
 
+variant selection-error {
+    missing-field(string),
+    no-matching-resource-type(string),
+    node-not-in-graph(string),
+    missing-value-error(string),
+    parents-depth-parse-int-error(string),
+    childrens-depth-parse-int-error(string),
+    incompatible-prefix-and-suffix-error(string),
+    failed-regex-match-error(string),
+    invalid-method-error(string),
+    matched-empty-method-error,
+    invalid-indirect-selection-error,
+    bool-input-error(string)
+}
+
 resource node-selector {
-    static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, node-create-error>
+    static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
-    update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, node-create-error>
+    update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
-    select: func(selector: string) -> list<string>
+    select: func(selector: string) -> expected<list<string>, selection-error>
 
-    select-type: func(selector: string, resource-type-filter: resource-type-filter) -> list<string>
+    select-type: func(selector: string, resource-type-filter: resource-type-filter) -> expected<list<string>, selection-error>
 
-    select-included: func(included-nodes: list<string>, selector: string) -> list<string>
+    select-included: func(included-nodes: list<string>, selector: string, resource-type-filter: resource-type-filter) -> expected<list<string>, selection-error>
 }

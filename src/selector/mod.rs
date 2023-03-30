@@ -2,11 +2,6 @@
 pub mod methods;
 pub mod spec;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-enum SearchError {
-    NoMatchingResourceType(String),
-}
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 enum AccessType {
     Protected,

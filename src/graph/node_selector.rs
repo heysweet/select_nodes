@@ -3,10 +3,8 @@ use crate::ParsedGraph;
 use crate::UniqueId;
 use std::collections::HashSet;
 
-use crate::selector::methods::SearchError;
-use crate::SelectionCriteria;
-
-use super::SelectionError;
+use crate::interface::SelectionError;
+use crate::selector::spec::SelectionCriteria;
 
 trait NodeMatch {
     fn node_is_match(&self, node: GraphNode) -> bool;
@@ -14,26 +12,21 @@ trait NodeMatch {
 
 pub struct NodeSelector {
     graph: ParsedGraph,
-    prev_graph: Option<ParsedGraph>
+    prev_graph: Option<ParsedGraph>,
 }
 
 impl NodeSelector {
-
     pub fn select_nodes(
         &self,
         raw_selector: impl Into<String>,
-    ) -> Result<Vec<UniqueId>, SearchError> {
+    ) -> Result<Vec<UniqueId>, SelectionError> {
         let binding = raw_selector.into();
         let raw_select: &str = binding.as_str();
 
         // NodeSelector;
 
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select));
-
-        match selection_criteria {
-            Err(selection_error) => Err(SearchError::SelectionError { selection_error }),
-            Ok(selection_criteria) => Ok(selection_criteria.method.search(&self.graph, raw_select)?),
-        }
+        let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select))?;
+        Ok(selection_criteria.method.search(&self.graph, raw_select)?)
     }
 }
 
@@ -56,7 +49,7 @@ impl ParsedGraph {
         &self,
         included_nodes: HashSet<UniqueId>,
         spec: SelectionCriteria,
-    ) -> Result<HashSet<UniqueId>, SearchError> {
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
         let result = spec
             .method
             .search(&self.filter(&included_nodes), &spec.value)?;
@@ -68,7 +61,11 @@ impl ParsedGraph {
     /// - collect the directly included nodes
     /// - find their specified relatives
     /// - perform any selector-specific expansion
-    fn get_nodes_from_criteria(&self, included_nodes: HashSet<UniqueId>, spec: SelectionCriteria) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SearchError> {
+    fn get_nodes_from_criteria(
+        &self,
+        included_nodes: HashSet<UniqueId>,
+        spec: SelectionCriteria,
+    ) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SelectionError> {
         // TODO: SelectorReportInvalidSelector in py has better error
         let collected: HashSet<UniqueId> = self.select_included(included_nodes, spec)?;
         todo!()
