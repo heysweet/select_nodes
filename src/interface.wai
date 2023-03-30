@@ -1,5 +1,7 @@
+type unique-id = string
+
 record node {
-    unique-id: string,
+    unique-id: unique-id,
     name: string,
     resource-type: string,
     package-name: string,
@@ -10,8 +12,8 @@ record node {
 }
 
 record edge {
-    unique-id: string,
-    parents: list<string>
+    unique-id: unique-id,
+    parents: list<unique-id>
 }
 
 variant node-type {
@@ -43,7 +45,6 @@ variant selector-create-error {
 }
 
 variant selection-error {
-    missing-field(string),
     no-matching-resource-type(string),
     node-not-in-graph(string),
     missing-value-error(string),
@@ -53,7 +54,7 @@ variant selection-error {
     failed-regex-match-error(string),
     invalid-method-error(string),
     matched-empty-method-error,
-    invalid-indirect-selection-error,
+    invalid-indirect-selection-error(string),
     bool-input-error(string)
 }
 
@@ -62,9 +63,9 @@ resource node-selector {
 
     update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
-    select: func(selector: string) -> expected<list<string>, selection-error>
+    select: func(selector: string) -> expected<list<unique-id>, selection-error>
 
-    select-type: func(selector: string, resource-type-filter: resource-type-filter) -> expected<list<string>, selection-error>
+    select-type: func(selector: string, resource-type-filter: resource-type-filter) -> expected<list<unique-id>, selection-error>
 
-    select-included: func(included-nodes: list<string>, selector: string, resource-type-filter: resource-type-filter) -> expected<list<string>, selection-error>
+    select-included: func(included-nodes: list<unique-id>, selector: string, resource-type-filter: resource-type-filter) -> expected<list<unique-id>, selection-error>
 }

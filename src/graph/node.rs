@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 
-use crate::interface::SelectionError::*;
+use crate::interface::Node;
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
-use crate::{
-    graph::UniqueId,
-    interface::{self, SelectionError},
-};
+use crate::{graph::UniqueId};
+
+use crate::SelectorCreateError;
+use crate::SelectorCreateError::*;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum NodeType {
@@ -24,6 +25,20 @@ pub enum NodeType {
     Exposure,
     Metric,
     Group,
+}
+
+impl Display for SelectorCreateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NoMatchingResourceType(resource_type) => {
+                write!(f, "Invalid resource_type '{}'", resource_type)
+            }
+
+            MissingField(field) => {
+                write!(f, "Missing required field '{}'", field)
+            }
+        }
+    }
 }
 
 impl NodeType {
@@ -46,7 +61,7 @@ impl NodeType {
         }
     }
 
-    pub fn from_string(resource_type: impl Into<String>) -> Result<NodeType, SelectionError> {
+    pub fn from_string(resource_type: impl Into<String>) -> Result<NodeType, SelectorCreateError> {
         let resource_type = resource_type.into();
         match resource_type.as_str() {
             "model" => Ok(NodeType::Model),
@@ -97,18 +112,18 @@ pub trait GraphNodeData {}
 use indexmap::IndexMap;
 
 impl GraphNode {
-    pub fn from(node: &interface::Node) -> Result<Self, SelectionError> {
-        let resource_type = node.resource_type;
+    pub fn from(node: &Node) -> Result<Self, SelectorCreateError> {
+        let resource_type = &node.resource_type;
 
         Ok(Self {
-            unique_id: node.unique_id,
-            name: node.name,
-            resource_type: NodeType::from_string(&resource_type)
-                .or_else(|_| Err(NoMatchingResourceType(resource_type)))?,
-            package_name: node.package_name,
-            path: node.path,
-            original_file_path: node.original_file_path,
-            fqn: node.fqn,
+            unique_id: node.unique_id.to_owned(),
+            name: node.name.to_owned(),
+            resource_type: NodeType::from_string(resource_type)
+                .or_else(|_| Err(NoMatchingResourceType(resource_type.to_owned())))?,
+            package_name: node.package_name.to_owned(),
+            path: node.path.to_owned(),
+            original_file_path: node.original_file_path.to_owned(),
+            fqn: node.fqn.to_owned(),
         })
     }
 
@@ -120,7 +135,7 @@ impl GraphNode {
         package_name: impl Into<String>,
         path: impl Into<String>,
         original_file_path: impl Into<String>,
-    ) -> Result<Self, SelectionError> {
+    ) -> Result<Self, SelectorCreateError> {
         let resource_type: String = resource_type.into();
         let resource_type = NodeType::from_string(&resource_type)
             .or_else(|_| Err(NoMatchingResourceType(resource_type)))?;
@@ -138,7 +153,7 @@ impl GraphNode {
     fn get_required_key(
         index_map: &IndexMap<String, String>,
         key: &str,
-    ) -> Result<String, SelectionError> {
+    ) -> Result<String, SelectorCreateError> {
         Ok(index_map
             .get(key)
             .ok_or_else(|| MissingField(key.to_string()))?

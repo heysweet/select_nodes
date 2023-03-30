@@ -2,7 +2,7 @@
 mod select_nodes_tests {
     use std::collections::{HashSet, HashMap};
 
-    use crate::graph::node::{GraphNode, NodeCreateError, generate_node_hash_map};
+    use crate::graph::node::{GraphNode, generate_node_hash_map};
 
     use super::super::*;
 
@@ -37,7 +37,7 @@ mod select_nodes_tests {
         }
     }
 
-    fn get_test_node_map() -> Result<HashMap<String, GraphNode>, NodeCreateError> {
+    fn get_test_node_map() -> Result<HashMap<String, GraphNode>, SelectorCreateError> {
         let nodes = vec![
             GraphNode::new(
                 ["id_a"].to_vec(),

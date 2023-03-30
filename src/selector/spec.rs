@@ -40,7 +40,7 @@ impl IndirectSelection {
             "cautious" => Ok(Self::Cautious),
             "buildable" => Ok(Self::Buildable),
             "empty" => Ok(Self::Empty),
-            _ => Err(InvalidIndirectSelectionError { input: raw_string }),
+            _ => Err(InvalidIndirectSelectionError(raw_string)),
         }
     }
 
@@ -101,9 +101,9 @@ impl ParsedMethod {
                 match raw_method_name {
                     Some(raw_method_name) => {
                         let method_name = MethodName::from_string(&raw_method_name);
-                        let method_name = method_name.ok_or(InvalidMethodError {
-                            method_name: raw_method_name.to_string(),
-                        })?;
+                        let method_name = method_name.ok_or(InvalidMethodError(
+                            raw_method_name.to_string()
+                        ))?;
                         Ok(ParsedMethod {
                             method_name,
                             method_arguments: Vec::from(result),
@@ -161,12 +161,18 @@ pub enum FOOSelectionError {
     BoolInputError { key: String },
 }
 
-use Interface::SelectionError;
-use Interface::SelectionError::*;
+use crate::SelectionError;
+use crate::SelectionError::*;
 
 impl Display for SelectionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            NoMatchingResourceType(input) => {
+                write!(f, "'{}' is not a valid resource_type", input)
+            }
+            NodeNotInGraph(input) => {
+                write!(f, "Node '{}' not found in graph", input)
+            }
             MissingValueError(input) => {
                 write!(f, "'{}' is not a valid method name", input)
             }
@@ -245,17 +251,14 @@ impl SelectionCriteria {
         let children_depth = Self::get_num_from_match(captures.name("children_depth"));
 
         match (children && childrens_parents, parents_depth, children_depth) {
-            (true, _, _) => Err(IncompatiblePrefixAndSuffixError {
-                input: raw.to_string(),
-            }),
-            (_, Err(err), _) => Err(ParentsDepthParseIntError {
-                input: raw.to_string(),
-                err,
-            }),
-            (_, _, Err(err)) => Err(ChildrensDepthParseIntError {
-                input: raw.to_string(),
-                err,
-            }),
+            (true, _, _) => Err(IncompatiblePrefixAndSuffixError(
+                raw.to_string(),
+            )),
+            (_, Err(err), _) => Err(ParentsDepthParseIntError(
+                raw.to_string())),
+            (_, _, Err(err)) => Err(ChildrensDepthParseIntError(
+                raw.to_string()
+            )),
             (false, Ok(parents_depth), Ok(children_depth)) => Ok(Self {
                 raw: raw.to_owned(),
                 method: parsed_method.method_name,
@@ -284,9 +287,7 @@ impl SelectionCriteria {
 
         match result {
             Some(captures) => Self::from_captures(&raw, &captures, indirect_selection),
-            None => Err(FailedRegexMatchError {
-                input: raw.to_string(),
-            }),
+            None => Err(FailedRegexMatchError(raw.to_string())),
         }
     }
 
@@ -304,10 +305,7 @@ impl SelectionCriteria {
         match (Self::_match_to_int(raw_str), raw_str) {
             (Ok(depth), _) => Ok(depth),
             (_, None) => Ok(None),
-            (Err(err), Some(raw_str)) => Err(ParentsDepthParseIntError {
-                input: raw_str.to_string(),
-                err,
-            }),
+            (Err(err), Some(raw_str)) => Err(ParentsDepthParseIntError(raw_str.to_string())),
         }
     }
 
@@ -315,10 +313,7 @@ impl SelectionCriteria {
         match (Self::_match_to_int(raw_str), raw_str) {
             (Ok(depth), _) => Ok(depth),
             (_, None) => Ok(None),
-            (Err(err), Some(raw_str)) => Err(ChildrensDepthParseIntError {
-                input: raw_str.to_string(),
-                err,
-            }),
+            (Err(err), Some(raw_str)) => Err(ChildrensDepthParseIntError(raw_str.to_string())),
         }
     }
 
@@ -329,9 +324,7 @@ impl SelectionCriteria {
                 let bool_from_str = bool::from_str(str);
                 match bool_from_str {
                     Ok(parsed_bool) => Ok(Some(parsed_bool)),
-                    Err(_) => Err(BoolInputError {
-                        key: key.to_string(),
-                    }),
+                    Err(_) => Err(BoolInputError(key.to_string())),
                 }
             }
         }
@@ -352,9 +345,7 @@ impl SelectionCriteria {
         let children_depth = Self::parse_childrens_depth(children_depth)?;
 
         match value {
-            None => Err(MissingValueError {
-                input: raw.to_string(),
-            }),
+            None => Err(MissingValueError(raw.to_string())),
             Some(value) => {
                 // WARN! This is a dictionary in the python impl, we expect a string instead.
                 let method_args = index_map.get("method_args");
