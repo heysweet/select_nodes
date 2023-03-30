@@ -37,8 +37,15 @@ variant resource-type-filter {
     some(list<node-type>),
 }
 
+variant node-create-error {
+    missing-field(string),
+    no-matching-resource-type(string),
+}
+
 resource node-selector {
-    static new: func(nodes: list<node>, edges: list<edge>) -> node-selector
+    static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, node-create-error>
+
+    update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, node-create-error>
 
     select: func(selector: string) -> list<string>
 

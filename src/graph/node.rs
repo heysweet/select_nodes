@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
-use crate::graph::UniqueId;
+use crate::{graph::UniqueId, interface::{self, NodeCreateError}};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum NodeType {
@@ -96,29 +96,21 @@ pub trait GraphNodeData {}
 
 use indexmap::IndexMap;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum NodeCreateError {
-    MissingFieldError { field_name: String },
-    NoMatchingResourceType { resource_type: String },
-}
-
-use NodeCreateError::*;
-
 impl GraphNode {
-    pub fn from_indexmap(
-        fqn: Vec<String>,
-        index_map: &IndexMap<String, String>,
+    pub fn from(
+        node: &interface::Node,
     ) -> Result<Self, NodeCreateError> {
-        let resource_type = Self::get_required_key(index_map, "resource_type")?;
+        let resource_type = node.resource_type;
+        
         Ok(Self {
-            unique_id: Self::get_required_key(index_map, "unique_id")?,
-            name: Self::get_required_key(index_map, "name")?,
+            unique_id: node.unique_id,
+            name: node.name,
             resource_type: NodeType::from_string(&resource_type)
-                .or_else(|_| Err(NodeCreateError::NoMatchingResourceType { resource_type }))?,
-            package_name: Self::get_required_key(index_map, "package_name")?,
-            path: Self::get_required_key(index_map, "path")?,
-            original_file_path: Self::get_required_key(index_map, "original_file_path")?,
-            fqn,
+                .or_else(|_| Err(NodeCreateError::NoMatchingResourceType(resource_type)))?,
+            package_name: node.package_name,
+            path: node.path,
+            original_file_path: node.original_file_path,
+            fqn: node.fqn,
         })
     }
 
@@ -133,7 +125,7 @@ impl GraphNode {
     ) -> Result<Self, NodeCreateError> {
         let resource_type: String = resource_type.into();
         let resource_type = NodeType::from_string(&resource_type)
-            .or_else(|_| Err(NodeCreateError::NoMatchingResourceType { resource_type }))?;
+            .or_else(|_| Err(NodeCreateError::NoMatchingResourceType(resource_type)))?;
         Ok(Self {
             fqn: fqn.into_iter().map(|s| s.into()).collect(),
             unique_id: unique_id.into(),
@@ -151,8 +143,10 @@ impl GraphNode {
     ) -> Result<String, NodeCreateError> {
         Ok(index_map
             .get(key)
-            .ok_or_else(|| MissingFieldError {
-                field_name: key.to_string(),
+            .ok_or_else(|| {
+                NodeCreateError::MissingField(
+                            key.to_string(),
+                        )
             })?
             .to_string())
     }
