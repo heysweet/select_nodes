@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod select_nodes_tests {
-    use std::collections::HashSet;
+    use std::collections::{HashSet, HashMap};
 
-    use crate::graph::node::{GraphNode, NodeCreateError};
+    use crate::graph::node::{GraphNode, NodeCreateError, generate_node_hash_map};
 
     use super::super::*;
 
