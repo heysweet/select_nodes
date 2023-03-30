@@ -11,7 +11,7 @@ mod graph;
 mod selector;
 
 use crate::graph::UniqueId;
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, rc::Rc};
 
 use graph::node::GraphNode;
 use wai_bindgen_rust::Handle;
@@ -25,8 +25,8 @@ pub struct Interface;
 impl interface::Interface for Interface {}
 
 pub struct NodeSelector {
-    graph: ParsedGraph,
-    previous_state: Option<ParsedGraph>,
+    graph: Rc<ParsedGraph>,
+    previous_state: Option<Rc<ParsedGraph>>,
 }
 
 //core/dbt/graph/selector.py
@@ -34,6 +34,7 @@ impl interface::NodeSelector for NodeSelector {
     fn new(
         nodes: Vec<Node>,
         edges: Vec<Edge>,
+        previous_state: Option<Handle<NodeSelector>>
     ) -> Result<Handle<NodeSelector>, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, GraphNode>::new();
         for node in nodes.iter() {
@@ -47,31 +48,8 @@ impl interface::NodeSelector for NodeSelector {
             parent_map.insert(edge.unique_id.to_owned(), parents);
         }
         Ok(NodeSelector {
-            graph: ParsedGraph::from_parents(node_map, parent_map),
-            previous_state: None,
-        }
-        .into())
-    }
-
-    fn update(
-        &self,
-        nodes: Vec<interface::Node>,
-        edges: Vec<interface::Edge>,
-    ) -> Result<Handle<NodeSelector>, SelectorCreateError> {
-        let mut node_map = HashMap::<UniqueId, GraphNode>::new();
-        for node in nodes.iter() {
-            node_map.insert(node.unique_id.clone(), GraphNode::from(node)?);
-        }
-
-        let mut parent_map = HashMap::<UniqueId, HashSet<UniqueId>>::new();
-        for edge in edges.iter() {
-            let mut parents = HashSet::<UniqueId>::new();
-            parents.extend(edge.parents.to_owned());
-            parent_map.insert(edge.unique_id.clone(), parents);
-        }
-        Ok(NodeSelector {
-            graph: ParsedGraph::from_parents(node_map, parent_map),
-            previous_state: Some(self.graph.to_owned()),
+            graph: ParsedGraph::from_parents(node_map, parent_map).into(),
+            previous_state: previous_state.and_then(|s| Some(s.graph.clone())),
         }
         .into())
     }
