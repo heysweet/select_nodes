@@ -17,6 +17,7 @@ use std::{
 };
 
 use graph::node::GraphNode;
+use selector::spec::SelectionCriteria;
 use wai_bindgen_rust::Handle;
 
 use interface::{Edge, Node, ResourceTypeFilter, SelectionError, SelectorCreateError};
@@ -30,6 +31,36 @@ impl interface::Interface for Interface {}
 pub struct NodeSelector {
     graph: Rc<ParsedGraph>,
     previous_state: Option<Rc<ParsedGraph>>,
+}
+
+impl NodeSelector {
+    fn select_and_filter(
+        &self,
+        included_nodes: Option<HashSet<UniqueId>>,
+        selector: &String,
+        resource_type_filter: &ResourceTypeFilter,
+    ) -> Result<Vec<UniqueId>, SelectionError> {
+        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
+        let unfiltered_result = selection_criteria.method.search(&self.graph, selector)?;
+        Ok(unfiltered_result
+            .iter()
+            .filter(|id| {
+                match &included_nodes {
+                    Some(included_nodes) => {
+                        self.graph.is_node(id, &|n| {
+                            included_nodes.contains(*id) && resource_type_filter.should_include(n.resource_type)
+                        })
+                    },
+                    None => {
+                        self.graph.is_node(id, &|n| {
+                            resource_type_filter.should_include(n.resource_type)
+                        })
+                    },
+                }
+            })
+            .map(|s| s.to_owned())
+            .collect())
+    }
 }
 
 //core/dbt/graph/selector.py
@@ -51,17 +82,14 @@ impl interface::NodeSelector for NodeSelector {
         }
         Ok(NodeSelector {
             graph: ParsedGraph::from_parents(node_map, parent_map).into(),
-            previous_state: None,//previous_state.and_then(|s| Some(s.graph.clone())),
+            previous_state: None, //previous_state.and_then(|s| Some(s.graph.clone())),
         }
         .into())
     }
 
-    fn set_previous_state(&self, previous_state: Option<Handle<NodeSelector>>) -> bool {
-        true
-    }
-
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
-        todo!()
+        let selection_criteria = SelectionCriteria::from_single_raw_spec(&selector)?;
+        Ok(selection_criteria.method.search(&self.graph, &selector)?)
     }
 
     fn select_type(
@@ -69,7 +97,7 @@ impl interface::NodeSelector for NodeSelector {
         selector: UniqueId,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        todo!()
+        self.select_and_filter(None, &selector, &resource_type_filter)
     }
 
     fn select_included(
@@ -78,6 +106,6 @@ impl interface::NodeSelector for NodeSelector {
         selector: String,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        todo!()
+        self.select_and_filter(Some(included_nodes.into_iter().collect()), &selector, &resource_type_filter)
     }
 }

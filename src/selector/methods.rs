@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use crate::{
-    graph::{node::NodeType, ParsedGraph},
-    interface::SelectionError,
+    graph::ParsedGraph,
+    interface::{SelectionError, NodeType},
 };
 
 use super::MethodName;

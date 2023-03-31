@@ -3,28 +3,16 @@ use std::fmt::Display;
 
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
 use crate::graph::UniqueId;
-use crate::interface::Node;
+
+use crate::interface::{Node, NodeType};
 
 use crate::SelectorCreateError;
 use crate::SelectorCreateError::*;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum NodeType {
-    Model,
-    Analysis,
-    Test,
-    Snapshot,
-    Operation,
-    Seed,
-    // TODO: rm?
-    RPCCall,
-    SqlOperation,
-    Documentation,
-    Source,
-    Macro,
-    Exposure,
-    Metric,
-    Group,
+impl PartialEq for NodeType {
+    fn eq(&self, other: &Self) -> bool {
+        core::mem::discriminant(self) == core::mem::discriminant(other)
+    }
 }
 
 impl Display for SelectorCreateError {
@@ -50,9 +38,9 @@ impl NodeType {
             NodeType::Snapshot => "snapshot",
             NodeType::Operation => "operation",
             NodeType::Seed => "seed",
-            NodeType::RPCCall => "rpc",
+            NodeType::Rpc => "rpc",
             NodeType::SqlOperation => "sql operation",
-            NodeType::Documentation => "doc",
+            NodeType::Doc => "doc",
             NodeType::Source => "source",
             NodeType::Macro => "macro",
             NodeType::Exposure => "exposure",
@@ -70,9 +58,9 @@ impl NodeType {
             "snapshot" => Ok(NodeType::Snapshot),
             "operation" => Ok(NodeType::Operation),
             "seed" => Ok(NodeType::Seed),
-            "rpc" => Ok(NodeType::RPCCall),
+            "rpc" => Ok(NodeType::Rpc),
             "sql operation" => Ok(NodeType::SqlOperation),
-            "doc" => Ok(NodeType::Documentation),
+            "doc" => Ok(NodeType::Doc),
             "source" => Ok(NodeType::Source),
             "macro" => Ok(NodeType::Macro),
             "exposure" => Ok(NodeType::Exposure),
@@ -81,9 +69,10 @@ impl NodeType {
             _ => Err(NoMatchingResourceType(resource_type)),
         }
     }
+
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug)]
 /// All nodes or node-like objects in this file should have these properties
 pub struct BaseNodeData {
     pub unique_id: UniqueId,
@@ -94,7 +83,7 @@ pub struct BaseNodeData {
     pub original_file_path: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug)]
 /// Nodes in the DAG
 pub struct GraphNode {
     pub unique_id: UniqueId,

@@ -12,7 +12,7 @@ use self::node::GraphNode;
 
 pub use String as UniqueId;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ParsedGraph {
     pub node_map: HashMap<UniqueId, GraphNode>,
     pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
@@ -42,6 +42,19 @@ impl ParsedGraph {
             }
         }
         target_map
+    }
+
+    pub fn get_node_if(
+        &self,
+        node_id: &UniqueId,
+        is_match: &dyn Fn(&GraphNode) -> bool,
+    ) -> Option<&GraphNode> {
+        let node = self.node_map.get(node_id)?;
+        is_match(node).then_some(node)
+    }
+
+    pub fn is_node(&self, node_id: &UniqueId, is_match: &dyn Fn(&GraphNode) -> bool) -> bool {
+        self.get_node_if(node_id, is_match).is_some()
     }
 
     // Returns a subset of the Graph, does not modify original Graph.
