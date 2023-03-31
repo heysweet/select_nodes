@@ -1,8 +1,11 @@
 #[cfg(test)]
 mod select_nodes_tests {
-    use std::collections::{HashSet, HashMap};
+    use std::collections::{HashMap, HashSet};
 
-    use crate::graph::node::{GraphNode, generate_node_hash_map};
+    use crate::{
+        graph::node::{generate_node_hash_map, GraphNode},
+        interface::NodeSelector,
+    };
 
     use super::super::*;
 
@@ -37,43 +40,53 @@ mod select_nodes_tests {
         }
     }
 
-    fn get_test_node_map() -> Result<HashMap<String, GraphNode>, SelectorCreateError> {
-        let nodes = vec![
-            GraphNode::new(
-                ["id_a"].to_vec(),
-                "id_a",
-                "name_a",
-                "model",
-                "pkg_a",
-                "path_a",
-                "opath_a",
-            ),
-            GraphNode::new(
-                ["id_b"].to_vec(),
-                "id_b",
-                "name_b",
-                "analysis",
-                "pkg_b",
-                "path_b",
-                "opath_b",
-            ),
-            GraphNode::new(
-                ["id_c"].to_vec(),
-                "id_c",
-                "name_c",
-                "test",
-                "pkg_c",
-                "path_c",
-                "opath_c",
-            ),
-        ];
-        let nodes: Vec<GraphNode> = nodes
-            .iter()
-            .filter(|n| n.is_ok())
-            .map(|node| node.clone().unwrap())
-            .collect();
+    fn get_test_edges() -> Vec<Edge> {
+        vec![
+            Edge {
+                unique_id: "id_a".to_string(),
+                parents: vec![],
+            },
+            Edge {
+                unique_id: "id_b".to_string(),
+                parents: vec!["id_a".to_string()],
+            },
+            Edge {
+                unique_id: "id_c".to_string(),
+                parents: vec!["id_a".to_string(), "id_b".to_string()],
+            },
+        ]
+    }
 
-        Ok(generate_node_hash_map(nodes))
+    fn get_test_nodes() -> Vec<Node> {
+        vec![
+            Node {
+                unique_id: "id_a".to_string(),
+                name: "name_a".to_string(),
+                resource_type: "model".to_string(),
+                package_name: "pkg_a".to_string(),
+                path: "path_a".to_string(),
+                original_file_path: "opath_a".to_string(),
+                fqn: ["id_a".to_string()].to_vec(),
+            },
+            Node {
+                unique_id: "id_b".to_string(),
+                name: "name_b".to_string(),
+                resource_type: "analysis".to_string(),
+                package_name: "pkg_b".to_string(),
+                path: "path_b".to_string(),
+                original_file_path: "opath_b".to_string(),
+                fqn: ["id_b".to_string()].to_vec(),
+            },
+            Node {
+                unique_id: "id_c".to_string(),
+                name: "name_c".to_string(),
+                resource_type: "test".to_string(),
+                package_name: "pkg_c".to_string(),
+                path: "path_c".to_string(),
+                original_file_path: "opath_c".to_string(),
+                fqn: ["id_c".to_string()].to_vec(),
+            },
+        ]
     }
 
     fn test_parents_map() -> HashMap<String, HashSet<String>> {
@@ -84,9 +97,10 @@ mod select_nodes_tests {
 
     #[test]
     fn it_handles_an_empty_collection_of_nodes() {
-        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
-
-        let result = select_nodes(graph, "my_model");
+        let nodes = get_test_nodes();
+        let edges = get_test_edges();
+        let node_selector = NodeSelector::new(nodes, edges);
+        let result = (&node_selector).select("my_model".to_owned());
 
         let expected: std::slice::Iter<UniqueId> = vec![].iter();
         assert!(matches!(result, Ok(expected)));
@@ -94,7 +108,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_the_matching_node() {
-        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_nodes(), test_parents_map());
 
         let result = select_nodes(graph, "my_model");
 
@@ -111,7 +125,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_filters_to_the_matching_node() {
-        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_nodes().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "my_model");
 
@@ -130,7 +144,7 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_no_node_if_not_matching() {
-        let graph = ParsedGraph::from_parents(get_test_node_map().unwrap(), test_parents_map());
+        let graph = ParsedGraph::from_parents(get_test_nodes().unwrap(), test_parents_map());
 
         let result = select_nodes(graph, "other_model");
 

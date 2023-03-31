@@ -11,7 +11,10 @@ mod graph;
 mod selector;
 
 use crate::graph::UniqueId;
-use std::{collections::{HashMap, HashSet}, rc::Rc};
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 use graph::node::GraphNode;
 use wai_bindgen_rust::Handle;
@@ -34,7 +37,6 @@ impl interface::NodeSelector for NodeSelector {
     fn new(
         nodes: Vec<Node>,
         edges: Vec<Edge>,
-        previous_state: Option<Handle<NodeSelector>>
     ) -> Result<Handle<NodeSelector>, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, GraphNode>::new();
         for node in nodes.iter() {
@@ -49,9 +51,13 @@ impl interface::NodeSelector for NodeSelector {
         }
         Ok(NodeSelector {
             graph: ParsedGraph::from_parents(node_map, parent_map).into(),
-            previous_state: previous_state.and_then(|s| Some(s.graph.clone())),
+            previous_state: None,//previous_state.and_then(|s| Some(s.graph.clone())),
         }
         .into())
+    }
+
+    fn set_previous_state(&self, previous_state: Option<Handle<NodeSelector>>) -> bool {
+        true
     }
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {

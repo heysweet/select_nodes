@@ -101,9 +101,8 @@ impl ParsedMethod {
                 match raw_method_name {
                     Some(raw_method_name) => {
                         let method_name = MethodName::from_string(&raw_method_name);
-                        let method_name = method_name.ok_or(InvalidMethodError(
-                            raw_method_name.to_string()
-                        ))?;
+                        let method_name =
+                            method_name.ok_or(InvalidMethodError(raw_method_name.to_string()))?;
                         Ok(ParsedMethod {
                             method_name,
                             method_arguments: Vec::from(result),
@@ -251,14 +250,9 @@ impl SelectionCriteria {
         let children_depth = Self::get_num_from_match(captures.name("children_depth"));
 
         match (children && childrens_parents, parents_depth, children_depth) {
-            (true, _, _) => Err(IncompatiblePrefixAndSuffixError(
-                raw.to_string(),
-            )),
-            (_, Err(err), _) => Err(ParentsDepthParseIntError(
-                raw.to_string())),
-            (_, _, Err(err)) => Err(ChildrensDepthParseIntError(
-                raw.to_string()
-            )),
+            (true, _, _) => Err(IncompatiblePrefixAndSuffixError(raw.to_string())),
+            (_, Err(err), _) => Err(ParentsDepthParseIntError(raw.to_string())),
+            (_, _, Err(err)) => Err(ChildrensDepthParseIntError(raw.to_string())),
             (false, Ok(parents_depth), Ok(children_depth)) => Ok(Self {
                 raw: raw.to_owned(),
                 method: parsed_method.method_name,

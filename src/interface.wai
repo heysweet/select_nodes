@@ -59,7 +59,9 @@ variant selection-error {
 }
 
 resource node-selector {
-    static new: func(nodes: list<node>, edges: list<edge>, previous-state: option<node-selector>) -> expected<node-selector, selector-create-error>
+    static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
+
+    set-previous-state: func(previous-state: option<node-selector>) -> bool
 
     select: func(selector: string) -> expected<list<unique-id>, selection-error>
 

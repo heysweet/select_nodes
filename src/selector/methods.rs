@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use crate::{graph::{node::NodeType, ParsedGraph}, interface::SelectionError};
+use crate::{
+    graph::{node::NodeType, ParsedGraph},
+    interface::SelectionError,
+};
 
 use super::MethodName;
 use crate::interface::SelectionError::*;
@@ -143,9 +146,7 @@ impl MethodName {
             ResourceType => {
                 let resource_type = NodeType::from_string(selector);
                 match resource_type {
-                    Err(_) => Err(NoMatchingResourceType(
-                        selector.to_string()
-                    )),
+                    Err(_) => Err(NoMatchingResourceType(selector.to_string())),
                     Ok(resource_type) => {
                         let iter = graph.node_map.iter();
                         let iter = iter.filter(|(_, node)| node.resource_type == resource_type);
