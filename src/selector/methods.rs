@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::{
     graph::ParsedGraph,
-    interface::{SelectionError, NodeType},
+    interface::{NodeType, SelectionError},
 };
 
 use super::MethodName;

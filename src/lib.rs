@@ -44,31 +44,20 @@ impl NodeSelector {
         let unfiltered_result = selection_criteria.method.search(&self.graph, selector)?;
         Ok(unfiltered_result
             .iter()
-            .filter(|id| {
-                match &included_nodes {
-                    Some(included_nodes) => {
-                        self.graph.is_node(id, &|n| {
-                            included_nodes.contains(*id) && resource_type_filter.should_include(n.resource_type)
-                        })
-                    },
-                    None => {
-                        self.graph.is_node(id, &|n| {
-                            resource_type_filter.should_include(n.resource_type)
-                        })
-                    },
-                }
+            .filter(|id| match &included_nodes {
+                Some(included_nodes) => self.graph.is_node(id, &|n| {
+                    included_nodes.contains(*id)
+                        && resource_type_filter.should_include(n.resource_type)
+                }),
+                None => self.graph.is_node(id, &|n| {
+                    resource_type_filter.should_include(n.resource_type)
+                }),
             })
             .map(|s| s.to_owned())
             .collect())
     }
-}
 
-//core/dbt/graph/selector.py
-impl interface::NodeSelector for NodeSelector {
-    fn new(
-        nodes: Vec<Node>,
-        edges: Vec<Edge>,
-    ) -> Result<Handle<NodeSelector>, SelectorCreateError> {
+    fn from(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Self, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, GraphNode>::new();
         for node in nodes.iter() {
             node_map.insert(node.unique_id.to_owned(), GraphNode::from(node)?);
@@ -80,11 +69,17 @@ impl interface::NodeSelector for NodeSelector {
             parents.extend(edge.parents.to_owned());
             parent_map.insert(edge.unique_id.to_owned(), parents);
         }
-        Ok(NodeSelector {
+        Ok(Self {
             graph: ParsedGraph::from_parents(node_map, parent_map).into(),
             previous_state: None, //previous_state.and_then(|s| Some(s.graph.clone())),
-        }
-        .into())
+        })
+    }
+}
+
+//core/dbt/graph/selector.py
+impl interface::NodeSelector for NodeSelector {
+    fn new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
+        NodeSelector::from(nodes, edges).and_then(|s| Ok(s.into()))
     }
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
@@ -106,6 +101,10 @@ impl interface::NodeSelector for NodeSelector {
         selector: String,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        self.select_and_filter(Some(included_nodes.into_iter().collect()), &selector, &resource_type_filter)
+        self.select_and_filter(
+            Some(included_nodes.into_iter().collect()),
+            &selector,
+            &resource_type_filter,
+        )
     }
 }

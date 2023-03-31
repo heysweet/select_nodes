@@ -1,4 +1,4 @@
-use crate::interface::{NodeType, self};
+use crate::interface::{self, NodeType};
 use interface::ResourceTypeFilter;
 
 impl ResourceTypeFilter {

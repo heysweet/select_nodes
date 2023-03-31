@@ -69,7 +69,6 @@ impl NodeType {
             _ => Err(NoMatchingResourceType(resource_type)),
         }
     }
-
 }
 
 #[derive(Clone, Debug)]

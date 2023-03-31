@@ -30,7 +30,7 @@ impl NodeSelector {
     }
 }
 
-trait SelectsNodes {
+trait OtherSelectNodes {
     /// Given the set of models selected by the explicit part of the
     /// selector (like "tag:foo"), apply the modifiers on the spec ("+"/"@").
     /// Return the set of additional nodes that should be collected (which may
@@ -83,7 +83,7 @@ impl ParsedGraph {
     // }
 }
 
-impl SelectsNodes for ParsedGraph {
+impl OtherSelectNodes for ParsedGraph {
     fn collect_specified_neighbors(
         &self,
         spec: SelectionCriteria,

@@ -2,14 +2,10 @@
 mod select_nodes_tests {
     use std::collections::{HashMap, HashSet};
 
-    use crate::{
-        graph::node::{generate_node_hash_map, GraphNode},
-        interface::NodeSelector,
-    };
+    use crate::graph::node::GraphNode;
+    use interface::NodeType::*;
 
     use super::super::*;
-
-    use graph::node::NodeType::*;
 
     fn add_parents(
         mut parents_map: HashMap<String, HashSet<String>>,
@@ -97,10 +93,15 @@ mod select_nodes_tests {
 
     #[test]
     fn it_handles_an_empty_collection_of_nodes() {
-        let nodes = get_test_nodes();
+        let nodes: Vec<Node> = vec![];
         let edges = get_test_edges();
-        let node_selector = NodeSelector::new(nodes, edges);
-        let result = (&node_selector).select("my_model".to_owned());
+        let node_selector = NodeSelector::from(nodes, edges);
+        let node_selector = node_selector.unwrap();
+        let result = node_selector.select_and_filter(
+            None,
+            &"my_model".to_string(),
+            &ResourceTypeFilter::All,
+        );
 
         let expected: std::slice::Iter<UniqueId> = vec![].iter();
         assert!(matches!(result, Ok(expected)));
@@ -108,26 +109,33 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_the_matching_node() {
-        let graph = ParsedGraph::from_parents(get_test_nodes(), test_parents_map());
-
-        let result = select_nodes(graph, "my_model");
-
-        // TODO:
-        // assert!(does_my_thing_match(result, expected));
-
-        assert!(result.is_ok());
-        let result: Vec<String> = result.unwrap();
+        let nodes = get_test_nodes();
+        let edges = get_test_edges();
+        let node_selector = NodeSelector::from(nodes, edges);
+        let node_selector = node_selector.unwrap();
+        let result = node_selector.select_and_filter(
+            None,
+            &"my_model".to_string(),
+            &ResourceTypeFilter::All,
+        );
 
         let expected = vec!["test".to_string()];
 
-        assert!(result.eq(&expected));
+        assert!(result.is_ok());
+        assert!(result.unwrap().eq(&expected));
     }
 
     #[test]
     fn it_filters_to_the_matching_node() {
-        let graph = ParsedGraph::from_parents(get_test_nodes().unwrap(), test_parents_map());
-
-        let result = select_nodes(graph, "my_model");
+        let nodes = get_test_nodes();
+        let edges = get_test_edges();
+        let node_selector = NodeSelector::from(nodes, edges);
+        let node_selector = node_selector.unwrap();
+        let result = node_selector.select_and_filter(
+            None,
+            &"my_model".to_string(),
+            &ResourceTypeFilter::All,
+        );
 
         let expected: Vec<GraphNode> = vec![GraphNode {
             fqn: ["test".to_string()].to_vec(),
@@ -144,9 +152,15 @@ mod select_nodes_tests {
 
     #[test]
     fn it_returns_no_node_if_not_matching() {
-        let graph = ParsedGraph::from_parents(get_test_nodes().unwrap(), test_parents_map());
-
-        let result = select_nodes(graph, "other_model");
+        let nodes = get_test_nodes();
+        let edges = get_test_edges();
+        let node_selector = NodeSelector::from(nodes, edges);
+        let node_selector = node_selector.unwrap();
+        let result = node_selector.select_and_filter(
+            None,
+            &"other_model".to_string(),
+            &ResourceTypeFilter::All,
+        );
 
         let expected: Vec<GraphNode> = vec![];
         let does_match = matches!(result, Ok(expected));
