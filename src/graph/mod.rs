@@ -1,12 +1,12 @@
 pub mod node;
-pub mod node_selector;
+pub mod parsed_graph;
 pub mod types;
 
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 use std::collections::{HashMap, HashSet};
 
-use crate::interface::SelectionError;
 use crate::interface::SelectionError::*;
+use crate::interface::{NodeType, SelectionError};
 
 use self::node::GraphNode;
 
@@ -18,6 +18,10 @@ pub struct ParsedGraph {
     pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     /// A map of nodes to its set of parents
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    pub sources: HashSet<UniqueId>,
+    pub exposures: HashSet<UniqueId>,
+    pub metrics: HashSet<UniqueId>,
+    pub macros: HashSet<UniqueId>,
 }
 
 impl ParsedGraph {
@@ -57,14 +61,44 @@ impl ParsedGraph {
         self.get_node_if(node_id, is_match).is_some()
     }
 
+    fn filter_by_resource_type(
+        included: &HashMap<UniqueId, GraphNode>,
+        resource_type: NodeType,
+    ) -> HashSet<UniqueId> {
+        included
+            .iter()
+            .filter_map(|(id, node)| match (node.resource_type == resource_type) {
+                true => Some(id.to_string()),
+                false => None,
+            })
+            .collect()
+    }
+
     // Returns a subset of the Graph, does not modify original Graph.
     pub fn filter(&self, included: &HashSet<UniqueId>) -> Self {
         let mut node_map = self.node_map.clone();
         node_map.retain(|id, _node| included.contains(id));
-        ParsedGraph {
+        let node_set: HashSet<&UniqueId> = HashSet::from_iter(node_map.keys());
+        ParsedGraph::from(
             node_map,
-            children_map: self.children_map.clone(),
-            parents_map: self.children_map.clone(),
+            self.children_map.clone(),
+            self.children_map.clone(),
+        )
+    }
+
+    fn from(
+        node_map: HashMap<UniqueId, GraphNode>,
+        children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+        parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> Self {
+        ParsedGraph {
+            sources: Self::filter_by_resource_type(&node_map, NodeType::Source),
+            exposures: Self::filter_by_resource_type(&node_map, NodeType::Exposure),
+            metrics: Self::filter_by_resource_type(&node_map, NodeType::Metric),
+            macros: Self::filter_by_resource_type(&node_map, NodeType::Macro),
+            parents_map,
+            children_map,
+            node_map,
         }
     }
 
@@ -73,11 +107,7 @@ impl ParsedGraph {
         children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
         let parents_map = Self::reverse_edges(&children_map);
-        ParsedGraph {
-            node_map: node_map,
-            parents_map,
-            children_map,
-        }
+        ParsedGraph::from(node_map, children_map, parents_map)
     }
 
     pub fn from_parents(
@@ -85,11 +115,7 @@ impl ParsedGraph {
         parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
         let children_map = Self::reverse_edges(&parents_map);
-        ParsedGraph {
-            node_map: node_map,
-            parents_map,
-            children_map,
-        }
+        ParsedGraph::from(node_map, children_map, parents_map)
     }
 
     fn bfs_edges(

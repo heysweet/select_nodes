@@ -167,11 +167,8 @@ mod select_nodes_tests {
     fn it_filters_to_the_matching_node() {
         let node_selector = get_test_node_selector(get_test_nodes(), get_test_edges());
 
-        let result = node_selector.select_and_filter(
-            None,
-            &"andrew".to_string(),
-            &ResourceTypeFilter::All,
-        );
+        let result =
+            node_selector.select_and_filter(None, &"andrew".to_string(), &ResourceTypeFilter::All);
 
         let expected = get_expected(vec!["andrew"]);
         assert_eq!(result.unwrap(), expected);
