@@ -115,11 +115,11 @@ mod select_nodes_tests {
         let node_selector = node_selector.unwrap();
         let result = node_selector.select_and_filter(
             None,
-            &"my_model".to_string(),
+            &"id_a".to_string(),
             &ResourceTypeFilter::All,
         );
 
-        let expected = vec!["test".to_string()];
+        let expected = vec!["id_a".to_string()];
 
         assert!(result.is_ok());
         assert!(result.unwrap().eq(&expected));
