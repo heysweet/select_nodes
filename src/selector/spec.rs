@@ -63,6 +63,14 @@ impl IndirectSelection {
             Self::Empty => "empty",
         }
     }
+
+    /// If a node is not selected itself, but its parent(s) are, it may qualify
+    /// for indirect selection.
+    /// Today, only Test nodes can be indirectly selected. In the future,
+    /// other node types or invocation flags might qualify.
+    pub fn can_select_indirectly(node: &GraphNode) -> bool {
+        node.resource_type == NodeType::Test
+    }
 }
 
 impl Default for IndirectSelection {
@@ -160,6 +168,8 @@ pub enum FOOSelectionError {
     BoolInputError { key: String },
 }
 
+use crate::graph::node::GraphNode;
+use crate::interface::NodeType;
 use crate::SelectionError;
 use crate::SelectionError::*;
 

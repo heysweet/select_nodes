@@ -2,12 +2,12 @@ use crate::selector::spec::IndirectSelection;
 use crate::GraphNode;
 use crate::ParsedGraph;
 use crate::UniqueId;
-use std::collections::HashMap;
 use std::collections::HashSet;
-use std::iter;
 
 use crate::interface::SelectionError;
 use crate::selector::spec::SelectionCriteria;
+
+use IndirectSelection::*;
 
 trait NodeMatch {
     fn node_is_match(&self, node: GraphNode) -> bool;
@@ -70,7 +70,7 @@ impl ParsedGraph {
         let collected: HashSet<UniqueId> = self.select_included(&included_nodes, &spec)?;
 
         match &spec.indirect_selection {
-            crate::selector::spec::IndirectSelection::Empty => Ok((collected, HashSet::new())),
+            Empty => Ok((collected, HashSet::new())),
             indirect_selector => {
                 let neighbors = self.collect_specified_neighbors(spec, collected)?;
                 todo!()
@@ -104,11 +104,11 @@ impl ParsedGraph {
         selected: &HashSet<UniqueId>,
         indirect_selection: IndirectSelection,
     ) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SelectionError> {
-        let direct_nodes = selected.clone();
-        let indirect_nodes: HashSet<UniqueId> = HashSet::new();
+        let mut direct_nodes = selected.clone();
+        let mut indirect_nodes: HashSet<UniqueId> = HashSet::new();
         let selected_and_parents: HashSet<UniqueId> = HashSet::new();
 
-        if indirect_selection == IndirectSelection::Buildable {
+        if indirect_selection == Buildable {
             let selected_and_parents: HashSet<UniqueId> = self
                 .select_parents(selected, None)?
                 .union(&self.sources)
@@ -119,7 +119,32 @@ impl ParsedGraph {
                 .map(|s| s.into())
                 .collect();
         }
-        todo!()
+
+        for unique_id in self.select_successors(selected) {
+            match self
+                .node_map
+                .get(&unique_id)
+                .and_then(|node| IndirectSelection::can_select_indirectly(node).then_some(node))
+            {
+                None => {}
+                Some(node) => {
+                    match indirect_selection {
+                        Eager /* TODO: | OR depends_on_nodes is subset of selected */ => {
+                            direct_nodes.insert(unique_id);
+                        },
+                        Buildable /* TODO: | OR depends_on_nodes is subset of selected_and_parents */ => {
+                            direct_nodes.insert(unique_id);
+                        },
+                        Cautious => {
+                            indirect_nodes.insert(unique_id);
+                        },
+                        Empty => {},
+                    }
+                }
+            }
+        }
+
+        Ok((direct_nodes, indirect_nodes))
     }
 
     // Return the subset of selected nodes that is a match for this selector.
