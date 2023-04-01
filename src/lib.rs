@@ -41,7 +41,7 @@ impl NodeSelector {
         resource_type_filter: &ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let unfiltered_result = selection_criteria.method.search(&self.graph, selector)?;
+        let unfiltered_result = selection_criteria.method.search(&self.previous_state.clone(), &self.graph, selector)?;
         Ok(unfiltered_result
             .iter()
             .filter(|id| match &included_nodes {
@@ -71,7 +71,7 @@ impl NodeSelector {
         }
         Ok(Self {
             graph: ParsedGraph::from_parents(node_map, parent_map).into(),
-            previous_state: None, //previous_state.and_then(|s| Some(s.graph.clone())),
+            previous_state: None.into(), //previous_state.and_then(|s| Some(s.graph.clone())),
         })
     }
 }
@@ -84,7 +84,7 @@ impl interface::NodeSelector for NodeSelector {
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(&selector)?;
-        Ok(selection_criteria.method.search(&self.graph, &selector)?)
+        Ok(selection_criteria.method.search(&self.previous_state, &self.graph, &selector)?)
     }
 
     fn select_type(

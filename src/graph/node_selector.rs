@@ -10,26 +10,6 @@ trait NodeMatch {
     fn node_is_match(&self, node: GraphNode) -> bool;
 }
 
-pub struct NodeSelector {
-    graph: ParsedGraph,
-    prev_graph: Option<ParsedGraph>,
-}
-
-impl NodeSelector {
-    pub fn select_nodes(
-        &self,
-        raw_selector: impl Into<String>,
-    ) -> Result<Vec<UniqueId>, SelectionError> {
-        let binding = raw_selector.into();
-        let raw_select: &str = binding.as_str();
-
-        // NodeSelector;
-
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(String::from(raw_select))?;
-        Ok(selection_criteria.method.search(&self.graph, raw_select)?)
-    }
-}
-
 trait OtherSelectNodes {
     /// Given the set of models selected by the explicit part of the
     /// selector (like "tag:foo"), apply the modifiers on the spec ("+"/"@").
@@ -52,7 +32,7 @@ impl ParsedGraph {
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let result = spec
             .method
-            .search(&self.filter(&included_nodes), &spec.value)?;
+            .search(&None, &self.filter(&included_nodes), &spec.value)?;
         Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
     }
 

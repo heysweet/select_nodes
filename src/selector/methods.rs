@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, rc::Rc};
 
 use crate::{
     graph::ParsedGraph,
@@ -83,6 +83,7 @@ impl MethodName {
 
     pub fn search(
         &self,
+        previous_state: &Option<Rc<ParsedGraph>>,
         graph: &ParsedGraph,
         selector: &str,
     ) -> core::result::Result<Vec<String>, SelectionError> {
