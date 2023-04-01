@@ -96,14 +96,15 @@ mod select_nodes_tests {
 
     fn make_node(id: impl Into<String>) -> Node {
         let id: String = id.into();
+        let package_name = format!("pkg_{}", &id);
         Node {
             unique_id: id.clone(),
             name: format!("name_{}", &id),
             resource_type: "model".to_string(),
-            package_name: format!("pkg_{}", &id),
+            package_name: package_name.clone(),
             path: format!("path_{}", &id),
             original_file_path: format!("opath_{}", &id),
-            fqn: [format!("id_{}", &id)].to_vec(),
+            fqn: [package_name.to_string(), format!("{}", &id)].to_vec(),
         }
     }
 
@@ -139,7 +140,8 @@ mod select_nodes_tests {
         let expected = vec!["andr".to_string()];
 
         assert!(result.is_ok());
-        assert!(result.unwrap().eq(&expected));
+        let result = result.unwrap();
+        assert!(result.eq(&expected));
     }
 
     #[test]
