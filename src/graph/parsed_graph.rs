@@ -1,4 +1,5 @@
 use crate::selector::spec::IndirectSelection;
+use crate::selector::spec::SelectionSpec;
 use crate::GraphNode;
 use crate::ParsedGraph;
 use crate::UniqueId;
@@ -20,12 +21,15 @@ trait OtherSelectNodes {
     /// overlap with the selected set).
     fn collect_specified_neighbors(
         &self,
-        spec: SelectionCriteria,
-        selected: HashSet<UniqueId>,
+        spec: &SelectionCriteria,
+        selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError>;
 
     // fn new(graph: ParsedGraph, previous_state: PreviousState) -> Self;
 }
+
+type DirectNodes = HashSet<UniqueId>;
+type IndirectNodes = HashSet<UniqueId>;
 
 impl ParsedGraph {
     fn select_included(
@@ -63,19 +67,37 @@ impl ParsedGraph {
     /// - perform any selector-specific expansion
     fn get_nodes_from_criteria(
         &self,
-        included_nodes: HashSet<UniqueId>,
-        spec: SelectionCriteria,
-    ) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SelectionError> {
+        spec: &SelectionCriteria,
+    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
+        let nodes: HashSet<UniqueId> = self.node_map.keys().map(|id| id.to_string()).collect();
         // TODO: SelectorReportInvalidSelector in py has better error
-        let collected: HashSet<UniqueId> = self.select_included(&included_nodes, &spec)?;
+        let collected: HashSet<UniqueId> = self.select_included(&nodes, &spec)?;
 
         match &spec.indirect_selection {
             Empty => Ok((collected, HashSet::new())),
             indirect_selector => {
-                let neighbors = self.collect_specified_neighbors(spec, collected)?;
-                todo!()
-                // expand_selection()
+                let neighbors = self.collect_specified_neighbors(&spec, &collected)?;
+                let selected: HashSet<UniqueId> = collected
+                    .union(&neighbors)
+                    .map(|id| id.to_string())
+                    .collect();
+                let (direct_nodes, indirect_nodes) =
+                    self.expand_selection(&selected, indirect_selector)?;
+                Ok((direct_nodes, indirect_nodes))
             }
+        }
+    }
+
+    /// If the spec is a composite spec (a union, difference, or intersection),
+    /// recurse into its selections and combine them. If the spec is a concrete
+    /// selection criteria, resolve that using the given graph.
+    fn select_nodes_recursively(
+        &self,
+        spec: &SelectionSpec,
+    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
+        match spec {
+            SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(spec),
+            SelectionSpec => {}
         }
     }
 
@@ -102,13 +124,13 @@ impl ParsedGraph {
     fn expand_selection(
         &self,
         selected: &HashSet<UniqueId>,
-        indirect_selection: IndirectSelection,
-    ) -> Result<(HashSet<UniqueId>, HashSet<UniqueId>), SelectionError> {
+        indirect_selection: &IndirectSelection,
+    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
         let mut direct_nodes = selected.clone();
         let mut indirect_nodes: HashSet<UniqueId> = HashSet::new();
         let selected_and_parents: HashSet<UniqueId> = HashSet::new();
 
-        if indirect_selection == Buildable {
+        if *indirect_selection == Buildable {
             let selected_and_parents: HashSet<UniqueId> = self
                 .select_parents(selected, None)?
                 .union(&self.sources)
@@ -156,8 +178,8 @@ impl ParsedGraph {
 impl OtherSelectNodes for ParsedGraph {
     fn collect_specified_neighbors(
         &self,
-        spec: SelectionCriteria,
-        selected: HashSet<UniqueId>,
+        spec: &SelectionCriteria,
+        selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut additional: HashSet<UniqueId> = HashSet::new();
 

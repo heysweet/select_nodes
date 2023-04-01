@@ -2,7 +2,9 @@
 #[path = "spec_tests.rs"]
 mod graph_selector_spec_tests;
 
+use indexmap::set::Union;
 use indexmap::IndexMap;
+use std::collections::HashSet;
 use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::FromStr};
 
 /// core/dbt/graph/selector_spec.py
@@ -169,7 +171,7 @@ pub enum FOOSelectionError {
 }
 
 use crate::graph::node::GraphNode;
-use crate::interface::NodeType;
+use crate::interface::{NodeType, UniqueId};
 use crate::SelectionError;
 use crate::SelectionError::*;
 
@@ -383,6 +385,40 @@ impl SelectionCriteria {
                     children_depth,
                     indirect_selection,
                 })
+            }
+        }
+    }
+}
+
+pub enum SelectionSpec {
+    SelectionCriteria(SelectionCriteria),
+    SelectionIntersection,
+    SelectionDifference,
+    SelectionUnion,
+}
+
+impl SelectionSpec {
+    pub fn combine_selection(&self, selections: Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
+        let hash_sets = selections.iter();
+        let first = hash_sets.next();
+        let iter = selections[0].iter();
+
+        match self {
+            SelectionSpec::SelectionIntersection => {
+                let combination = iter.filter(|&id| hash_sets.all(|set| set.contains(id)));
+                combination.map(|&b| b).collect()
+            }
+            SelectionSpec::SelectionDifference => {
+                let combination = iter.filter(|&id| !hash_sets.any(|set| set.contains(id)));
+                combination.map(|&b| b).collect()
+            }
+            SelectionSpec::SelectionUnion | SelectionSpec::SelectionCriteria(_) => {
+                let mut combination = HashSet::clone(first.unwrap());
+
+                for item in hash_sets {
+                    combination.extend(*item);
+                }
+                combination
             }
         }
     }
