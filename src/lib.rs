@@ -32,10 +32,7 @@ impl interface::NodeSelector for NodeSelector {
     }
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(&selector)?;
-        Ok(selection_criteria
-            .method
-            .search(&self.previous_state, &self.graph, &selector)?)
+        self.select_and_filter(None, &selector, &ResourceTypeFilter::All)
     }
 
     fn select_type(

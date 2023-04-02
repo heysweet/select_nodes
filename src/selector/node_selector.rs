@@ -70,7 +70,7 @@ impl NodeSelector {
         let unfiltered_result = selection_criteria.method.search(
             &self.previous_state.clone(),
             &self.graph,
-            selector,
+            &selection_criteria.value,
         )?;
         Ok(unfiltered_result
             .iter()
