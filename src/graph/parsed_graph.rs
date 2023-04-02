@@ -1,14 +1,12 @@
 /// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
 use std::collections::HashMap;
 
-use crate::NodeSelector;
 use crate::GraphNode;
 use std::collections::HashSet;
 
-use crate::interface::SelectionError;
-use crate::selector::spec::SelectionCriteria;
-use crate::interface::SelectionError::*;
 use crate::interface::NodeType;
+use crate::interface::SelectionError;
+use crate::interface::SelectionError::*;
 
 pub use String as UniqueId;
 
