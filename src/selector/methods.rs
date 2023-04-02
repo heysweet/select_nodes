@@ -2,11 +2,11 @@ use std::{path::Path, rc::Rc};
 
 use crate::{
     graph::parsed_graph::ParsedGraph,
-    interface::{NodeType, SelectionError},
+    dbt_node_selector::{NodeType, SelectionError},
 };
 
 use super::MethodName;
-use crate::interface::SelectionError::*;
+use crate::dbt_node_selector::SelectionError::*;
 
 use MethodName::*;
 

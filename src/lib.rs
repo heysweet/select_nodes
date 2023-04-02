@@ -5,7 +5,7 @@ mod lib_tests;
 #[macro_use]
 extern crate lazy_static;
 
-wai_bindgen_rust::export!("src/interface.wai");
+wai_bindgen_rust::export!("src/dbt_node_selector.wai");
 
 mod graph;
 mod selector;
@@ -21,14 +21,14 @@ use selector::{
 };
 use wai_bindgen_rust::Handle;
 
-use interface::{Edge, Node, ResourceTypeFilter, SelectionError, SelectorCreateError};
+use dbt_node_selector::{Edge, Node, ResourceTypeFilter, SelectionError, SelectorCreateError};
 
-pub struct Interface;
+pub struct DbtNodeSelector;
 
-impl interface::Interface for Interface {}
+impl dbt_node_selector::DbtNodeSelector for DbtNodeSelector {}
 
 //core/dbt/graph/selector.py
-impl interface::NodeSelector for NodeSelector {
+impl dbt_node_selector::NodeSelector for NodeSelector {
     fn new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
         NodeSelector::from(nodes, edges).and_then(|s| Ok(s.into()))
     }

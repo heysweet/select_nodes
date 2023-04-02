@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod select_nodes_tests {
     use crate::graph::node::GraphNode;
-    use interface::NodeType::*;
+    use dbt_node_selector::NodeType::*;
 
     use super::super::*;
 

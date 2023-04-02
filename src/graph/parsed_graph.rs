@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use crate::GraphNode;
 use std::collections::HashSet;
 
-use crate::interface::NodeType;
-use crate::interface::SelectionError;
-use crate::interface::SelectionError::*;
+use crate::dbt_node_selector::NodeType;
+use crate::dbt_node_selector::SelectionError;
+use crate::dbt_node_selector::SelectionError::*;
 
 pub use String as UniqueId;
 

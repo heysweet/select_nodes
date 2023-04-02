@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2021"
 description = "dbt Select Nodes library"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.wapm]
+namespace = "dbt-labs"  # The namespace to publish it to
+abi = "none" # How to compile the crate. "none" is "wasm32-unknown-unknown"
+bindings = { wai-version = "0.2.0", exports = "dbt_node_selector.wai" }
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

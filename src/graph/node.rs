@@ -4,7 +4,7 @@ use std::fmt::Display;
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
 use crate::graph::UniqueId;
 
-use crate::interface::{Node, NodeType};
+use crate::dbt_node_selector::{Node, NodeType};
 
 use crate::SelectorCreateError;
 use crate::SelectorCreateError::*;

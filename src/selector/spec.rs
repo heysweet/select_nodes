@@ -158,7 +158,7 @@ pub struct SelectionCriteria {
 }
 
 use crate::graph::node::GraphNode;
-use crate::interface::{NodeType, UniqueId};
+use crate::dbt_node_selector::{NodeType, UniqueId};
 use crate::SelectionError;
 use crate::SelectionError::*;
 
