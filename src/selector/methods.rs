@@ -1,7 +1,7 @@
 use std::{path::Path, rc::Rc};
 
 use crate::{
-    graph::ParsedGraph,
+    graph::parsed_graph::ParsedGraph,
     interface::{NodeType, SelectionError},
 };
 

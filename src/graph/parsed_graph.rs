@@ -1,346 +1,238 @@
-use crate::selector::spec::IndirectSelection;
-use crate::selector::spec::SelectionGroup;
-use crate::selector::spec::SelectionSpec;
+/// https://github.com/dbt-labs/dbt-core/blob/4186f99b742b47e0e95aca4f604cc09e5c67a449/core/dbt/graph/graph.py
+use std::collections::HashMap;
+
+use crate::NodeSelector;
 use crate::GraphNode;
-use crate::ParsedGraph;
-use crate::UniqueId;
 use std::collections::HashSet;
 
 use crate::interface::SelectionError;
-use crate::selector::resource_type_filter::*;
 use crate::selector::spec::SelectionCriteria;
-use crate::ResourceTypeFilter;
+use crate::interface::SelectionError::*;
+use crate::interface::NodeType;
 
-use IndirectSelection::*;
+pub use String as UniqueId;
 
-trait NodeMatch {
-    fn node_is_match(&self, node: GraphNode) -> bool;
+#[derive(Clone, Debug)]
+pub struct ParsedGraph {
+    pub node_map: HashMap<UniqueId, GraphNode>,
+    pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    /// A map of nodes to its set of parents
+    pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    pub sources: HashSet<UniqueId>,
+    pub exposures: HashSet<UniqueId>,
+    pub metrics: HashSet<UniqueId>,
+    pub macros: HashSet<UniqueId>,
 }
-
-trait OtherSelectNodes {
-    /// Given the set of models selected by the explicit part of the
-    /// selector (like "tag:foo"), apply the modifiers on the spec ("+"/"@").
-    /// Return the set of additional nodes that should be collected (which may
-    /// overlap with the selected set).
-    fn collect_specified_neighbors(
-        &self,
-        spec: &SelectionCriteria,
-        selected: &HashSet<UniqueId>,
-    ) -> Result<HashSet<UniqueId>, SelectionError>;
-
-    // fn new(graph: ParsedGraph, previous_state: PreviousState) -> Self;
-}
-
-type DirectNodes = HashSet<UniqueId>;
-type IndirectNodes = HashSet<UniqueId>;
 
 impl ParsedGraph {
-    fn select_included(
-        &self,
-        included_nodes: &HashSet<UniqueId>,
-        spec: &SelectionCriteria,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let result = spec
-            .method
-            .search(&None, &self.filter(&included_nodes), &spec.value)?;
-        Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
-    }
+    fn reverse_edges(
+        edge_map: &HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> HashMap<UniqueId, HashSet<UniqueId>> {
+        let mut target_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::new();
 
-    fn successors(&self, node_id: &UniqueId) -> Option<impl Iterator<Item = &UniqueId>> {
-        self.children_map
-            .get(node_id)
-            .and_then(|children| Some(children.iter()))
-    }
-
-    pub fn select_successors(&self, selected: &HashSet<UniqueId>) -> HashSet<String> {
-        let mut successors = HashSet::new();
-        for node_id in selected.iter() {
-            match self.successors(node_id) {
-                Some(new_successors) => successors.extend(new_successors),
-                None => {}
-            }
-        }
-        successors.into_iter().map(|id| id.to_string()).collect()
-    }
-
-    /// Get all nodes specified by the single selection criteria.
-    ///
-    /// - collect the directly included nodes
-    /// - find their specified relatives
-    /// - perform any selector-specific expansion
-    fn get_nodes_from_criteria(
-        &self,
-        spec: &SelectionCriteria,
-    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        let nodes: HashSet<UniqueId> = self.node_map.keys().map(|id| id.to_string()).collect();
-        // TODO: SelectorReportInvalidSelector in py has better error
-        let collected: HashSet<UniqueId> = self.select_included(&nodes, &spec)?;
-
-        match &spec.indirect_selection {
-            Empty => Ok((collected, HashSet::new())),
-            indirect_selector => {
-                let neighbors = self.collect_specified_neighbors(&spec, &collected)?;
-                let selected: HashSet<UniqueId> = collected
-                    .union(&neighbors)
-                    .map(|id| id.to_string())
-                    .collect();
-                let (direct_nodes, indirect_nodes) =
-                    self.expand_selection(&selected, indirect_selector)?;
-                Ok((direct_nodes, indirect_nodes))
-            }
-        }
-    }
-
-    /// Check tests previously selected indirectly to see if ALL their
-    /// parents are now present.
-    fn incorporate_indirect_nodes(
-        &self,
-        direct_nodes: &HashSet<UniqueId>,
-        indirect_nodes: &HashSet<UniqueId>,
-        indirect_selection: &IndirectSelection,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        if direct_nodes.eq(indirect_nodes) {
-            return Ok(direct_nodes.clone());
-        }
-        let mut selected = direct_nodes.clone();
-        match indirect_selection {
-            Cautious => {
-                for unique_id in indirect_nodes {
-                    let Some(node) = self.node_map.get(unique_id) else {
-                        continue;
-                    };
-                    if selected.is_superset(&node.depends_on) {
-                        selected.insert(unique_id.to_string());
+        for (source_id, target_ids) in edge_map.clone().iter() {
+            for target_id in target_ids {
+                let value = target_map.get_mut(target_id);
+                match value {
+                    Some(targets) => {
+                        targets.insert(source_id.clone());
+                    }
+                    None => {
+                        let mut targets = HashSet::new();
+                        targets.insert(source_id.clone());
+                        target_map.insert(source_id.clone(), targets);
                     }
                 }
-                Ok(selected)
             }
-            Buildable => {
-                let selected_and_parents: HashSet<String> =
-                    self.and_select_parents(&selected, None)?;
-                for unique_id in indirect_nodes {
-                    let Some(node) = self.node_map.get(unique_id) else {
-                        continue;
-                    };
-                    if selected_and_parents.is_superset(&node.depends_on) {
-                        selected.insert(unique_id.to_string());
-                    }
-                }
-                Ok(selected)
-            }
-            _ => Ok(selected),
+        }
+        target_map
+    }
+
+    pub fn get_node_if(
+        &self,
+        node_id: &UniqueId,
+        is_match: &dyn Fn(&GraphNode) -> bool,
+    ) -> Option<&GraphNode> {
+        let node = self.node_map.get(node_id)?;
+        is_match(node).then_some(node)
+    }
+
+    pub fn is_node(&self, node_id: &UniqueId, is_match: &dyn Fn(&GraphNode) -> bool) -> bool {
+        self.get_node_if(node_id, is_match).is_some()
+    }
+
+    fn filter_by_resource_type(
+        included: &HashMap<UniqueId, GraphNode>,
+        resource_type: NodeType,
+    ) -> HashSet<UniqueId> {
+        included
+            .iter()
+            .filter_map(|(id, node)| match (node.resource_type == resource_type) {
+                true => Some(id.to_string()),
+                false => None,
+            })
+            .collect()
+    }
+
+    // Returns a subset of the Graph, does not modify original Graph.
+    pub fn filter(&self, included: &HashSet<UniqueId>) -> Self {
+        let mut node_map = self.node_map.clone();
+        node_map.retain(|id, _node| included.contains(id));
+        let node_set: HashSet<&UniqueId> = HashSet::from_iter(node_map.keys());
+        ParsedGraph::from(
+            node_map,
+            self.children_map.clone(),
+            self.children_map.clone(),
+        )
+    }
+
+    fn from(
+        node_map: HashMap<UniqueId, GraphNode>,
+        children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+        parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> Self {
+        ParsedGraph {
+            sources: Self::filter_by_resource_type(&node_map, NodeType::Source),
+            exposures: Self::filter_by_resource_type(&node_map, NodeType::Exposure),
+            metrics: Self::filter_by_resource_type(&node_map, NodeType::Metric),
+            macros: Self::filter_by_resource_type(&node_map, NodeType::Macro),
+            parents_map,
+            children_map,
+            node_map,
         }
     }
 
-    pub fn get_selected_type(
-        &self,
-        selection_group: &SelectionGroup,
-        resource_type_filter: &ResourceTypeFilter,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let (selected_nodes, _indirect_only) = self.select_nodes(selection_group)?;
-
-        self.filter_selection(&selected_nodes, resource_type_filter)
+    pub fn from_children(
+        node_map: HashMap<UniqueId, GraphNode>,
+        children_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> Self {
+        let parents_map = Self::reverse_edges(&children_map);
+        ParsedGraph::from(node_map, children_map, parents_map)
     }
 
-    /// get_selected runs through the node selection process:
-    ///
-    /// - node selection. Based on the include/exclude sets, the set
-    ///     of matched unique IDs is returned
-    ///     - includes direct + indirect selection (for tests)
-    /// - filtering:
-    ///     - selectors can filter the nodes after all of them have been
-    ///         selected
-    pub fn get_selected(
-        &self,
-        selection_group: &SelectionGroup,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        self.get_selected_type(selection_group, &ResourceTypeFilter::All)
+    pub fn from_parents(
+        node_map: HashMap<UniqueId, GraphNode>,
+        parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
+    ) -> Self {
+        let children_map = Self::reverse_edges(&parents_map);
+        ParsedGraph::from(node_map, children_map, parents_map)
     }
 
-    fn _is_match(
-        &self,
-        unique_id: &UniqueId,
-        resource_type_filter: &ResourceTypeFilter,
-    ) -> Result<bool, SelectionError> {
-        // TODO: it looks like manifest.nodes is not a superset of
-        // sources, exposures, metrics
-        match self.node_map.get(unique_id) {
-            None => Err(SelectionError::NodeNotInGraph(unique_id.to_string())),
-            Some(node) => Ok(resource_type_filter.should_include(node.resource_type)),
-        }
-    }
-
-    /// Return the subset of selected nodes that is a match for this selector.
-    fn filter_selection(
+    fn bfs_edges(
         &self,
         selected: &HashSet<UniqueId>,
-        resource_type_filter: &ResourceTypeFilter,
-    ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let filtered =
-            selected
-                .iter()
-                .filter_map(|id| match self._is_match(&id, resource_type_filter) {
-                    Ok(false) => None,
-                    Ok(true) => Some(Ok(id.to_string())),
-                    Err(e) => Some(Err(e)),
-                });
-        let err = filtered.clone().find(|e| e.is_err());
-        match err {
-            Some(err) => Err(err.unwrap_err()),
-            None => Ok(filtered.map(|id| id.unwrap()).collect()),
-        }
-    }
-
-    /// Select the nodes in the graph according to the spec.
-    ///
-    /// This is the main point of entry for turning a spec into a set of nodes:
-    /// - Recurse through spec, select by criteria, combine by set operation
-    /// - Return final (unfiltered) selection set
-    fn select_nodes(
-        &self,
-        selection_group: &SelectionGroup,
-    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_group)?;
-        let indirect_only =
-            HashSet::difference(&indirect_nodes, &direct_nodes).map(|s| s.to_string());
-        Ok((direct_nodes.to_owned(), indirect_only.collect()))
-    }
-
-    /// If the spec is a composite spec (a union, difference, or intersection),
-    /// recurse into its selections and combine them. If the spec is a concrete
-    /// selection criteria, resolve that using the given graph.
-    fn select_nodes_recursively(
-        &self,
-        selection_group: &SelectionGroup,
-    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        match &selection_group.selection_method {
-            SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(&spec),
-            _ => {
-                let bundles = selection_group
-                    .components
+        output: &mut HashSet<UniqueId>,
+        node_id: &UniqueId,
+        max_depth: Option<usize>,
+        reverse: bool,
+    ) {
+        match max_depth {
+            Some(0) => (),
+            None | Some(_) => {
+                let immutable_output = output.clone();
+                let edges = if reverse {
+                    &self.parents_map
+                } else {
+                    &self.children_map
+                };
+                let empty_set = HashSet::new();
+                let vanguard = edges.get(node_id).unwrap_or(&empty_set);
+                let to_traverse = vanguard
                     .iter()
-                    .map(|component| self.select_nodes_recursively(component));
-
-                let mut direct_sets: Vec<HashSet<UniqueId>> = vec![];
-                let mut indirect_sets: Vec<HashSet<UniqueId>> = vec![];
-
-                for result in bundles {
-                    let (direct, indirect) = result?;
-                    indirect_sets.push(direct.union(&indirect).map(|s| s.to_owned()).collect());
-                    direct_sets.push(direct);
-                }
-
-                let initial_direct = selection_group.combined(direct_sets);
-                let indirect_nodes = selection_group.combined(indirect_sets);
-
-                let direct_nodes: HashSet<UniqueId> = self.incorporate_indirect_nodes(
-                    &initial_direct,
-                    &indirect_nodes,
-                    &selection_group.indirect_selection,
-                )?;
-
-                match selection_group.expect_exists && direct_nodes.len() == 0 {
-                    true => Err(SelectionError::NoNodesForSelectionCriteria(
-                        selection_group.raw.clone(),
-                    )),
-                    false => Ok((direct_nodes, indirect_nodes)),
+                    .filter(|id| !selected.contains(*id) && !immutable_output.contains(*id));
+                for next_id in to_traverse {
+                    output.insert(next_id.to_string());
+                    self.bfs_edges(
+                        selected,
+                        output,
+                        next_id,
+                        max_depth.and_then(|d| Some(d - 1)),
+                        reverse,
+                    );
                 }
             }
         }
     }
 
-    /// Test selection by default expands to include an implicitly/indirectly selected tests.
-    /// `dbt test -m model_a` also includes tests that directly depend on `model_a`.
-    /// Expansion has four modes, EAGER, CAUTIOUS and BUILDABLE, EMPTY.
-    ///
-    /// EAGER mode: If ANY parent is selected, select the test.
-    ///
-    /// CAUTIOUS mode:
-    ///  - If ALL parents are selected, select the test.
-    ///  - If ANY parent is missing, return it separately. We'll keep it around
-    ///    for later and see if its other parents show up.
-    ///
-    /// BUILDABLE mode:
-    ///  - If ALL parents are selected, or the parents of the test are themselves parents of the selected, select the test.
-    ///  - If ANY parent is missing, return it separately. We'll keep it around
-    ///    for later and see if its other parents show up.
-    ///
-    /// EMPTY mode: Only select the given node and ignore attached nodes (i.e. ignore tests attached to a model)
-    ///
-    /// Users can opt out of inclusive EAGER mode by passing --indirect-selection cautious
-    /// CLI argument or by specifying `indirect_selection: true` in a yaml selector
-    fn expand_selection(
+    /// Returns all nodes reachable from `node` in `graph`
+    fn descendants(
         &self,
         selected: &HashSet<UniqueId>,
-        indirect_selection: &IndirectSelection,
-    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        let mut direct_nodes = selected.clone();
-        let mut indirect_nodes: HashSet<UniqueId> = HashSet::new();
-        let selected_and_parents: HashSet<UniqueId> = HashSet::new();
-
-        if *indirect_selection == Buildable {
-            let selected_and_parents: HashSet<UniqueId> = self
-                .select_parents(selected, None)?
-                .union(&self.sources)
-                .map(|s| s.into())
-                .collect();
-            let selected_and_parents: HashSet<UniqueId> = selected
-                .union(&selected_and_parents)
-                .map(|s| s.into())
-                .collect();
-        }
-
-        for unique_id in self.select_successors(selected) {
-            match self
-                .node_map
-                .get(&unique_id)
-                .and_then(|node| IndirectSelection::can_select_indirectly(node).then_some(node))
-            {
-                None => {}
-                Some(node) => {
-                    match indirect_selection {
-                        Eager /* TODO: | OR depends_on_nodes is subset of selected */ => {
-                            direct_nodes.insert(unique_id);
-                        },
-                        Buildable /* TODO: | OR depends_on_nodes is subset of selected_and_parents */ => {
-                            direct_nodes.insert(unique_id);
-                        },
-                        Cautious => {
-                            indirect_nodes.insert(unique_id);
-                        },
-                        Empty => {},
-                    }
-                }
+        output: &mut HashSet<UniqueId>,
+        node_id: &UniqueId,
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        match self.node_map.contains_key(node_id) {
+            false => Err(NoMatchingResourceType(node_id.to_string())),
+            true => {
+                self.bfs_edges(selected, output, node_id, max_depth, false);
+                Ok(output.clone())
             }
         }
-
-        Ok((direct_nodes, indirect_nodes))
     }
 
-    // Return the subset of selected nodes that is a match for this selector.
-    // fn filter_selection(&self, selected: HashSet<UniqueId>) -> HashSet<UniqueId> {
-
-    // }
-}
-
-impl OtherSelectNodes for ParsedGraph {
-    fn collect_specified_neighbors(
+    /// Returns all nodes having a path to `node` in `graph`
+    fn ancestors(
         &self,
-        spec: &SelectionCriteria,
+        selected: &HashSet<UniqueId>,
+        output: &mut HashSet<UniqueId>,
+        node_id: &UniqueId,
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        match self.node_map.contains_key(node_id) {
+            false => Err(NodeNotInGraph(node_id.to_string())),
+            true => {
+                self.bfs_edges(selected, output, node_id, max_depth, true);
+                Ok(output.clone())
+            }
+        }
+    }
+
+    /// Returns set of all descendents up to a max-depth
+    pub fn select_children(
+        &self,
+        selected: &HashSet<UniqueId>,
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut descendants: HashSet<UniqueId> = HashSet::new();
+        for node_id in selected.iter() {
+            self.descendants(selected, &mut descendants, node_id, max_depth)?;
+        }
+        Ok(descendants)
+    }
+
+    /// Returns set of all ancestors up to a max-depth
+    pub fn select_parents(
+        &self,
+        selected: &HashSet<UniqueId>,
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut ancestors: HashSet<UniqueId> = HashSet::new();
+        for node_id in selected.iter() {
+            self.ancestors(selected, &mut ancestors, node_id, max_depth)?;
+        }
+        Ok(ancestors)
+    }
+
+    /// Adds parents to the selected set
+    pub fn and_select_parents(
+        &self,
+        selected: &HashSet<UniqueId>,
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut parents: HashSet<UniqueId> = self.select_parents(selected, max_depth)?;
+        parents.extend(selected.clone());
+        Ok(parents)
+    }
+
+    /// For the current selected nodes and the current selected nodes'
+    /// descendents, select all ancestors.
+    pub fn select_childrens_parents(
+        &self,
         selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let mut additional: HashSet<UniqueId> = HashSet::new();
-
-        if spec.childrens_parents {
-            additional.extend(self.select_childrens_parents(&selected)?);
-        } else {
-            if spec.children {
-                additional.extend(self.select_children(&selected, None)?);
-            }
-            if spec.parents {
-                additional.extend(self.select_parents(&selected, None)?);
-            }
-        }
-        Ok(additional)
+        let mut ancestors_for = self.select_children(selected, None)?;
+        ancestors_for.extend(ancestors_for.clone().into_iter());
+        self.select_parents(&mut ancestors_for, None)
     }
 }
