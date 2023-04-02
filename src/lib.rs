@@ -5,7 +5,7 @@ mod lib_tests;
 #[macro_use]
 extern crate lazy_static;
 
-wai_bindgen_rust::export!("src/dbt_node_selector.wai");
+wai_bindgen_rust::export!("src/dbt-node-selector.wai");
 
 mod graph;
 mod selector;
