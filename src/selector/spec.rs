@@ -218,6 +218,13 @@ impl Display for SelectionError {
                     "'{}' field was provided and was not string literal `true` or `false`",
                     key
                 )
+            },
+            NoNodesForSelectionCriteria(raw) => {
+                write!(
+                    f,
+                    "The selection criterion '{:?}' does not match any nodes",
+                    raw
+                )
             }
         }
     }
@@ -397,26 +404,45 @@ pub enum SelectionSpec {
     SelectionUnion,
 }
 
+pub struct SelectionGroup {
+    pub components: Vec<SelectionGroup>,
+    pub indirect_selection: IndirectSelection,
+    pub expect_exists: bool,
+    pub selection_method: SelectionSpec,
+    pub raw: String,
+}
+
+use SelectionSpec::{SelectionIntersection, SelectionDifference, SelectionUnion};
+
+impl SelectionGroup {
+    pub fn combined(&self, selections: Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
+        if selections.len() == 0 {
+            return HashSet::new();
+        }
+        self.selection_method.combine_selections(&selections)
+    }
+}
+
 impl SelectionSpec {
-    pub fn combine_selection(&self, selections: Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
-        let hash_sets = selections.iter();
+    fn combine_selections(&self, selections: &Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
+        let mut hash_sets = selections.iter();
         let first = hash_sets.next();
         let iter = selections[0].iter();
 
         match self {
-            SelectionSpec::SelectionIntersection => {
+            SelectionIntersection => {
                 let combination = iter.filter(|&id| hash_sets.all(|set| set.contains(id)));
-                combination.map(|&b| b).collect()
+                combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionSpec::SelectionDifference => {
+            SelectionDifference => {
                 let combination = iter.filter(|&id| !hash_sets.any(|set| set.contains(id)));
-                combination.map(|&b| b).collect()
+                combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionSpec::SelectionUnion | SelectionSpec::SelectionCriteria(_) => {
+            SelectionUnion | SelectionSpec::SelectionCriteria(_) => {
                 let mut combination = HashSet::clone(first.unwrap());
 
                 for item in hash_sets {
-                    combination.extend(*item);
+                    combination.extend(item.to_owned());
                 }
                 combination
             }

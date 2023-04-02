@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 
 /// https://github.com/dbt-labs/dbt-core/blob/a203fe866ad3e969e7de9cc24ddbbef1934aa7d0/core/dbt/node_types.py
@@ -86,6 +86,7 @@ pub struct BaseNodeData {
 /// Nodes in the DAG
 pub struct GraphNode {
     pub unique_id: UniqueId,
+    pub depends_on: HashSet<UniqueId>,
     pub resource_type: NodeType,
     pub name: String,
     pub package_name: String,
@@ -105,6 +106,7 @@ impl GraphNode {
 
         Ok(Self {
             unique_id: node.unique_id.to_owned(),
+            depends_on: HashSet::from_iter(node.depends_on.iter().map(|s| s.to_string())),
             name: node.name.to_owned(),
             resource_type: NodeType::from_string(resource_type)
                 .or_else(|_| Err(NoMatchingResourceType(resource_type.to_owned())))?,
@@ -118,6 +120,7 @@ impl GraphNode {
     pub fn new(
         fqn: Vec<impl Into<String>>,
         unique_id: impl Into<String>,
+        depends_on: Vec<String>,
         name: impl Into<String>,
         resource_type: impl Into<String>,
         package_name: impl Into<String>,
@@ -130,6 +133,7 @@ impl GraphNode {
         Ok(Self {
             fqn: fqn.into_iter().map(|s| s.into()).collect(),
             unique_id: unique_id.into(),
+            depends_on: depends_on.iter().map(|s| s.into()).collect(),
             name: name.into(),
             resource_type,
             package_name: package_name.into(),

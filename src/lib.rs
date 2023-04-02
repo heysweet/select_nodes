@@ -50,7 +50,7 @@ impl NodeSelector {
             .iter()
             .filter(|id| match &included_nodes {
                 Some(included_nodes) => self.graph.is_node(id, &|n| {
-                    included_nodes.contains(*id)
+                    included_nodes.contains(id.as_str())
                         && resource_type_filter.should_include(n.resource_type)
                 }),
                 None => self.graph.is_node(id, &|n| {

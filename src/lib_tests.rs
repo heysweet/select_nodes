@@ -113,6 +113,7 @@ mod select_nodes_tests {
         let resource_type = if id.len() == 1 { "source" } else { "model" };
         Node {
             unique_id: id.clone(),
+            depends_on: vec!["test".to_string()],
             name: format!("name_{}", &id),
             resource_type: resource_type.to_string(),
             package_name: package_name.clone(),

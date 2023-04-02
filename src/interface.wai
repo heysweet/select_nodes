@@ -7,6 +7,7 @@ record node {
     package-name: string,
     path: string,
     original-file-path: string,
+    depends-on: list<unique-id>,
     /// Fully qualified name
     fqn: list<string>
 }
@@ -55,7 +56,8 @@ variant selection-error {
     invalid-method-error(string),
     matched-empty-method-error,
     invalid-indirect-selection-error(string),
-    bool-input-error(string)
+    bool-input-error(string),
+    no-nodes-for-selection-criteria(string),
 }
 
 resource node-selector {

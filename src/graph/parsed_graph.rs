@@ -1,4 +1,5 @@
 use crate::selector::spec::IndirectSelection;
+use crate::selector::spec::SelectionGroup;
 use crate::selector::spec::SelectionSpec;
 use crate::GraphNode;
 use crate::ParsedGraph;
@@ -88,16 +89,73 @@ impl ParsedGraph {
         }
     }
 
+    /// Check tests previously selected indirectly to see if ALL their
+    /// parents are now present.
+    fn incorporate_indirect_nodes(&self, direct_nodes: &HashSet<UniqueId>, indirect_nodes: &HashSet<UniqueId>, indirect_selection: &IndirectSelection) -> Result<HashSet<UniqueId>, SelectionError> {
+        if direct_nodes.eq(indirect_nodes) {
+            return Ok(direct_nodes.clone());
+        }
+        let mut selected = direct_nodes.clone();
+        match indirect_selection {
+            Cautious => {
+                for unique_id in indirect_nodes {
+                    let Some(node) = self.node_map.get(unique_id) else {
+                        continue;
+                    };
+                    if selected.is_superset(&node.depends_on) {
+                        selected.insert(unique_id.to_string());
+                    }
+                }
+                Ok(selected)
+            },
+            Buildable => {
+                let selected_and_parents: HashSet<String> = self.and_select_parents(&selected, None)?;
+                for unique_id in indirect_nodes {
+                    let Some(node) = self.node_map.get(unique_id) else {
+                        continue;
+                    };
+                    if selected_and_parents.is_superset(&node.depends_on) {
+                        selected.insert(unique_id.to_string());
+                    }
+                }
+                Ok(selected)
+                
+            },
+            _ => Ok(selected),
+        }
+    }
+
     /// If the spec is a composite spec (a union, difference, or intersection),
     /// recurse into its selections and combine them. If the spec is a concrete
     /// selection criteria, resolve that using the given graph.
     fn select_nodes_recursively(
         &self,
-        spec: &SelectionSpec,
+        selection_group: &SelectionGroup,
     ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        match spec {
-            SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(spec),
-            SelectionSpec => {}
+        match &selection_group.selection_method {
+            SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(&spec),
+            _  => {
+                let bundles = selection_group.components.iter().map(|component| self.select_nodes_recursively(component));
+
+                let mut direct_sets: Vec<HashSet<UniqueId>> = vec![];
+                let mut indirect_sets: Vec<HashSet<UniqueId>> = vec![];
+
+                for result in bundles {
+                    let (direct, indirect) = result?;
+                    indirect_sets.push(direct.union(&indirect).map(|s|s.to_owned()).collect());
+                    direct_sets.push(direct);
+                }
+
+                let initial_direct = selection_group.combined(direct_sets);
+                let indirect_nodes = selection_group.combined(indirect_sets);
+
+                let direct_nodes: HashSet<UniqueId> = self.incorporate_indirect_nodes(&initial_direct, &indirect_nodes, &selection_group.indirect_selection)?;
+                
+                match selection_group.expect_exists && direct_nodes.len() == 0 {
+                    true => Err(SelectionError::NoNodesForSelectionCriteria(selection_group.raw.clone())),
+                    false => Ok((direct_nodes, indirect_nodes)),
+                }
+            } 
         }
     }
 
