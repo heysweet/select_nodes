@@ -207,4 +207,15 @@ mod select_nodes_tests {
         let expected = get_expected(vec!["an", "and"]);
         assert_eq!(result.unwrap(), expected);
     }
+
+    #[test]
+    fn it_should_select_all_ancestors() {
+        let node_selector = get_test_node_selector(get_test_nodes(), get_test_edges());
+
+        let result =
+            node_selector.select_and_filter(None, &"+and".to_string(), &ResourceTypeFilter::All);
+
+        let expected = get_expected(vec!["a", "an", "and"]);
+        assert_eq!(result.unwrap(), expected);
+    }
 }

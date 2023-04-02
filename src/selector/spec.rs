@@ -157,19 +157,6 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum FOOSelectionError {
-    MissingValueError { input: String },
-    ParentsDepthParseIntError { input: String, err: ParseIntError },
-    ChildrensDepthParseIntError { input: String, err: ParseIntError },
-    IncompatiblePrefixAndSuffixError { input: String },
-    FailedRegexMatchError { input: String },
-    InvalidMethodError { method_name: String },
-    MatchedEmptyMethodError {},
-    InvalidIndirectSelectionError { input: String },
-    BoolInputError { key: String },
-}
-
 use crate::graph::node::GraphNode;
 use crate::interface::{NodeType, UniqueId};
 use crate::SelectionError;
