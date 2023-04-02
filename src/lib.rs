@@ -10,12 +10,14 @@ wai_bindgen_rust::export!("src/interface.wai");
 mod graph;
 mod selector;
 
+use std::collections::HashSet;
+
 use crate::graph::UniqueId;
 
 use graph::node::GraphNode;
 use selector::{
     node_selector::NodeSelector,
-    spec::{IndirectSelection, SelectionCriteria},
+    spec::{IndirectSelection, SelectionCriteria, SelectionGroup},
 };
 use wai_bindgen_rust::Handle;
 
@@ -32,7 +34,12 @@ impl interface::NodeSelector for NodeSelector {
     }
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
-        self.select_and_filter(None, &selector, &ResourceTypeFilter::All)
+        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
+        let selection_group = SelectionGroup::from_criteria(selection_criteria);
+
+        let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
+
+        Ok(selected_set.into_iter().collect())
     }
 
     fn select_type(
@@ -40,7 +47,13 @@ impl interface::NodeSelector for NodeSelector {
         selector: UniqueId,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        self.select_and_filter(None, &selector, &resource_type_filter)
+        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
+        let selection_group = SelectionGroup::from_criteria(selection_criteria);
+
+        let selected_set: HashSet<String> =
+            self.get_selected_type(&selection_group, &resource_type_filter)?;
+
+        Ok(selected_set.into_iter().collect())
     }
 
     fn select_included(
@@ -49,10 +62,9 @@ impl interface::NodeSelector for NodeSelector {
         selector: String,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        self.select_and_filter(
-            Some(included_nodes.into_iter().collect()),
-            &selector,
-            &resource_type_filter,
-        )
+        todo!()
+        // let selected_set: HashSet<String> = self.select_type(selector, resource_type_filter)?;
+
+        // Ok(selected_set.into_iter().collect())
     }
 }

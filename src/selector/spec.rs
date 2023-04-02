@@ -408,6 +408,36 @@ impl SelectionGroup {
         }
         self.selection_method.combine_selections(&selections)
     }
+
+    pub fn from_criteria(selection_criteria: SelectionCriteria) -> Self {
+        Self {
+            components: vec![],
+            indirect_selection: selection_criteria.indirect_selection,
+            expect_exists: false,
+            raw: selection_criteria.raw.clone(),
+            selection_method: SelectionSpec::SelectionCriteria(selection_criteria),
+        }
+    }
+    // def get_selection_spec(self) -> SelectionSpec:
+    //     default_selector_name = self.config.get_default_selector_name()
+    //     # TODO:  The "eager" string below needs to be replaced with programatic access
+    //     #  to the default value for the indirect selection parameter in
+    //     # dbt.cli.params.indirect_selection
+    //     #
+    //     # Doing that is actually a little tricky, so I'm punting it to a new ticket GH #6397
+    //     indirect_selection = getattr(self.args, "INDIRECT_SELECTION", "eager")
+
+    //     if self.args.selector:
+    //         # use pre-defined selector (--selector)
+    //         spec = self.config.get_selector(self.args.selector)
+    //     elif not (self.selection_arg or self.exclusion_arg) and default_selector_name:
+    //         # use pre-defined selector (--selector) with default: true
+    //         fire_event(DefaultSelector(name=default_selector_name))
+    //         spec = self.config.get_selector(default_selector_name)
+    //     else:
+    //         # use --select and --exclude args
+    //         spec = parse_difference(self.selection_arg, self.exclusion_arg, indirect_selection)
+    //     return spec
 }
 
 impl SelectionSpec {
