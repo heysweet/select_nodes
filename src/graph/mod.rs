@@ -218,11 +218,12 @@ impl ParsedGraph {
     pub fn and_select_parents(
         &self,
         selected: &HashSet<UniqueId>,
-        max_depth: Option<usize>) -> Result<HashSet<UniqueId>, SelectionError> {
-            let mut parents: HashSet<UniqueId> = self.select_parents(selected, max_depth)?;
-            parents.extend(selected.clone());
-            Ok(parents)
-        }
+        max_depth: Option<usize>,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let mut parents: HashSet<UniqueId> = self.select_parents(selected, max_depth)?;
+        parents.extend(selected.clone());
+        Ok(parents)
+    }
 
     /// For the current selected nodes and the current selected nodes'
     /// descendents, select all ancestors.

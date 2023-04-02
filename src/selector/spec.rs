@@ -218,7 +218,7 @@ impl Display for SelectionError {
                     "'{}' field was provided and was not string literal `true` or `false`",
                     key
                 )
-            },
+            }
             NoNodesForSelectionCriteria(raw) => {
                 write!(
                     f,
@@ -412,7 +412,7 @@ pub struct SelectionGroup {
     pub raw: String,
 }
 
-use SelectionSpec::{SelectionIntersection, SelectionDifference, SelectionUnion};
+use SelectionSpec::{SelectionDifference, SelectionIntersection, SelectionUnion};
 
 impl SelectionGroup {
     pub fn combined(&self, selections: Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {

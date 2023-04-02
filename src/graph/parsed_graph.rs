@@ -7,7 +7,9 @@ use crate::UniqueId;
 use std::collections::HashSet;
 
 use crate::interface::SelectionError;
+use crate::selector::resource_type_filter::*;
 use crate::selector::spec::SelectionCriteria;
+use crate::ResourceTypeFilter;
 
 use IndirectSelection::*;
 
@@ -91,7 +93,12 @@ impl ParsedGraph {
 
     /// Check tests previously selected indirectly to see if ALL their
     /// parents are now present.
-    fn incorporate_indirect_nodes(&self, direct_nodes: &HashSet<UniqueId>, indirect_nodes: &HashSet<UniqueId>, indirect_selection: &IndirectSelection) -> Result<HashSet<UniqueId>, SelectionError> {
+    fn incorporate_indirect_nodes(
+        &self,
+        direct_nodes: &HashSet<UniqueId>,
+        indirect_nodes: &HashSet<UniqueId>,
+        indirect_selection: &IndirectSelection,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
         if direct_nodes.eq(indirect_nodes) {
             return Ok(direct_nodes.clone());
         }
@@ -107,9 +114,10 @@ impl ParsedGraph {
                     }
                 }
                 Ok(selected)
-            },
+            }
             Buildable => {
-                let selected_and_parents: HashSet<String> = self.and_select_parents(&selected, None)?;
+                let selected_and_parents: HashSet<String> =
+                    self.and_select_parents(&selected, None)?;
                 for unique_id in indirect_nodes {
                     let Some(node) = self.node_map.get(unique_id) else {
                         continue;
@@ -119,10 +127,83 @@ impl ParsedGraph {
                     }
                 }
                 Ok(selected)
-                
-            },
+            }
             _ => Ok(selected),
         }
+    }
+
+    pub fn get_selected_type(
+        &self,
+        selection_group: &SelectionGroup,
+        resource_type_filter: &ResourceTypeFilter,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let (selected_nodes, _indirect_only) = self.select_nodes(selection_group)?;
+
+        self.filter_selection(&selected_nodes, resource_type_filter)
+    }
+
+    /// get_selected runs through the node selection process:
+    ///
+    /// - node selection. Based on the include/exclude sets, the set
+    ///     of matched unique IDs is returned
+    ///     - includes direct + indirect selection (for tests)
+    /// - filtering:
+    ///     - selectors can filter the nodes after all of them have been
+    ///         selected
+    pub fn get_selected(
+        &self,
+        selection_group: &SelectionGroup,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        self.get_selected_type(selection_group, &ResourceTypeFilter::All)
+    }
+
+    fn _is_match(
+        &self,
+        unique_id: &UniqueId,
+        resource_type_filter: &ResourceTypeFilter,
+    ) -> Result<bool, SelectionError> {
+        // TODO: it looks like manifest.nodes is not a superset of
+        // sources, exposures, metrics
+        match self.node_map.get(unique_id) {
+            None => Err(SelectionError::NodeNotInGraph(unique_id.to_string())),
+            Some(node) => Ok(resource_type_filter.should_include(node.resource_type)),
+        }
+    }
+
+    /// Return the subset of selected nodes that is a match for this selector.
+    fn filter_selection(
+        &self,
+        selected: &HashSet<UniqueId>,
+        resource_type_filter: &ResourceTypeFilter,
+    ) -> Result<HashSet<UniqueId>, SelectionError> {
+        let filtered =
+            selected
+                .iter()
+                .filter_map(|id| match self._is_match(&id, resource_type_filter) {
+                    Ok(false) => None,
+                    Ok(true) => Some(Ok(id.to_string())),
+                    Err(e) => Some(Err(e)),
+                });
+        let err = filtered.clone().find(|e| e.is_err());
+        match err {
+            Some(err) => Err(err.unwrap_err()),
+            None => Ok(filtered.map(|id| id.unwrap()).collect()),
+        }
+    }
+
+    /// Select the nodes in the graph according to the spec.
+    ///
+    /// This is the main point of entry for turning a spec into a set of nodes:
+    /// - Recurse through spec, select by criteria, combine by set operation
+    /// - Return final (unfiltered) selection set
+    fn select_nodes(
+        &self,
+        selection_group: &SelectionGroup,
+    ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
+        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_group)?;
+        let indirect_only =
+            HashSet::difference(&indirect_nodes, &direct_nodes).map(|s| s.to_string());
+        Ok((direct_nodes.to_owned(), indirect_only.collect()))
     }
 
     /// If the spec is a composite spec (a union, difference, or intersection),
@@ -134,28 +215,37 @@ impl ParsedGraph {
     ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
         match &selection_group.selection_method {
             SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(&spec),
-            _  => {
-                let bundles = selection_group.components.iter().map(|component| self.select_nodes_recursively(component));
+            _ => {
+                let bundles = selection_group
+                    .components
+                    .iter()
+                    .map(|component| self.select_nodes_recursively(component));
 
                 let mut direct_sets: Vec<HashSet<UniqueId>> = vec![];
                 let mut indirect_sets: Vec<HashSet<UniqueId>> = vec![];
 
                 for result in bundles {
                     let (direct, indirect) = result?;
-                    indirect_sets.push(direct.union(&indirect).map(|s|s.to_owned()).collect());
+                    indirect_sets.push(direct.union(&indirect).map(|s| s.to_owned()).collect());
                     direct_sets.push(direct);
                 }
 
                 let initial_direct = selection_group.combined(direct_sets);
                 let indirect_nodes = selection_group.combined(indirect_sets);
 
-                let direct_nodes: HashSet<UniqueId> = self.incorporate_indirect_nodes(&initial_direct, &indirect_nodes, &selection_group.indirect_selection)?;
-                
+                let direct_nodes: HashSet<UniqueId> = self.incorporate_indirect_nodes(
+                    &initial_direct,
+                    &indirect_nodes,
+                    &selection_group.indirect_selection,
+                )?;
+
                 match selection_group.expect_exists && direct_nodes.len() == 0 {
-                    true => Err(SelectionError::NoNodesForSelectionCriteria(selection_group.raw.clone())),
+                    true => Err(SelectionError::NoNodesForSelectionCriteria(
+                        selection_group.raw.clone(),
+                    )),
                     false => Ok((direct_nodes, indirect_nodes)),
                 }
-            } 
+            }
         }
     }
 
