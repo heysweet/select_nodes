@@ -48,12 +48,15 @@ impl OtherSelectNodes for NodeSelector {
         selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut additional: HashSet<UniqueId> = HashSet::new();
-        
+
         if spec.childrens_parents {
             additional.extend(self.graph.select_childrens_parents(&selected)?);
         } else {
             if spec.children {
-                additional.extend(self.graph.select_children(&selected, &spec.children_depth)?);
+                additional.extend(
+                    self.graph
+                        .select_children(&selected, &spec.children_depth)?,
+                );
             }
             if spec.parents {
                 additional.extend(self.graph.select_parents(&selected, &spec.parents_depth)?);
@@ -243,6 +246,7 @@ impl NodeSelector {
     ) -> Result<bool, SelectionError> {
         // TODO: it looks like manifest.nodes is not a superset of
         // sources, exposures, metrics
+        //  core/dbt/contracts/graph/nodes.py
         match self.graph.node_map.get(unique_id) {
             None => Err(SelectionError::NodeNotInGraph(unique_id.to_string())),
             Some(node) => Ok(resource_type_filter.should_include(node.resource_type)),

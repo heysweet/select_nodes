@@ -2,7 +2,6 @@
 #[path = "spec_tests.rs"]
 mod graph_selector_spec_tests;
 
-use indexmap::set::Union;
 use indexmap::IndexMap;
 use std::collections::HashSet;
 use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::FromStr};
@@ -14,15 +13,15 @@ use super::MethodName;
 
 lazy_static! {
     static ref RAW_SELECTOR_PATTERN: Regex = {
-        // TODO: Is this a functional multiline regex?
         Regex::new(
-"\\A\
+            "\\A\
 (?P<childrens_parents>(@))?\
 (?P<parents>((?P<parents_depth>(\\d*))\\+))?\
 ((?P<method>([\\w.]+)):)?(?P<value>(.*?))\
 (?P<children>(\\+(?P<children_depth>(\\d*))))?\
-\\z"
-        ).unwrap()
+\\z",
+        )
+        .unwrap()
     };
 }
 
