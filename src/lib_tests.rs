@@ -216,7 +216,7 @@ mod select_nodes_tests {
     }
 
     #[test]
-    fn it_should_select_all_descendents() {
+    fn it_should_select_all_descendants() {
         let node_selector = get_test_node_selector(get_test_nodes(), get_test_edges());
 
         let result = node_selector._select("and+".to_string());

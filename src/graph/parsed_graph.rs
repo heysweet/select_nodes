@@ -28,7 +28,7 @@ impl ParsedGraph {
     ) -> HashMap<UniqueId, HashSet<UniqueId>> {
         let mut target_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::new();
 
-        for (source_id, target_ids) in edge_map.clone().iter() {
+        for (source_id, target_ids) in edge_map.iter() {
             for target_id in target_ids {
                 let value = target_map.get_mut(target_id);
                 match value {
@@ -38,7 +38,7 @@ impl ParsedGraph {
                     None => {
                         let mut targets = HashSet::new();
                         targets.insert(source_id.clone());
-                        target_map.insert(source_id.clone(), targets);
+                        target_map.insert(target_id.clone(), targets);
                     }
                 }
             }
@@ -186,7 +186,7 @@ impl ParsedGraph {
         }
     }
 
-    /// Returns set of all descendents up to a max-depth
+    /// Returns set of all descendants up to a max-depth
     pub fn select_children(
         &self,
         selected: &HashSet<UniqueId>,
@@ -224,7 +224,7 @@ impl ParsedGraph {
     }
 
     /// For the current selected nodes and the current selected nodes'
-    /// descendents, select all ancestors.
+    /// descendants, select all ancestors.
     pub fn select_childrens_parents(
         &self,
         selected: &HashSet<UniqueId>,
