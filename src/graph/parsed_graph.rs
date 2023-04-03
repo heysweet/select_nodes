@@ -121,7 +121,7 @@ impl ParsedGraph {
         selected: &HashSet<UniqueId>,
         output: &mut HashSet<UniqueId>,
         node_id: &UniqueId,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
         reverse: bool,
     ) {
         match max_depth {
@@ -144,7 +144,7 @@ impl ParsedGraph {
                         selected,
                         output,
                         next_id,
-                        max_depth.and_then(|d| Some(d - 1)),
+                        &max_depth.and_then(|d| Some(d - 1)),
                         reverse,
                     );
                 }
@@ -158,7 +158,7 @@ impl ParsedGraph {
         selected: &HashSet<UniqueId>,
         output: &mut HashSet<UniqueId>,
         node_id: &UniqueId,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         match self.node_map.contains_key(node_id) {
             false => Err(NoMatchingResourceType(node_id.to_string())),
@@ -175,7 +175,7 @@ impl ParsedGraph {
         selected: &HashSet<UniqueId>,
         output: &mut HashSet<UniqueId>,
         node_id: &UniqueId,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         match self.node_map.contains_key(node_id) {
             false => Err(NodeNotInGraph(node_id.to_string())),
@@ -190,7 +190,7 @@ impl ParsedGraph {
     pub fn select_children(
         &self,
         selected: &HashSet<UniqueId>,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut descendants: HashSet<UniqueId> = HashSet::new();
         for node_id in selected.iter() {
@@ -203,7 +203,7 @@ impl ParsedGraph {
     pub fn select_parents(
         &self,
         selected: &HashSet<UniqueId>,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut ancestors: HashSet<UniqueId> = HashSet::new();
         for node_id in selected.iter() {
@@ -216,7 +216,7 @@ impl ParsedGraph {
     pub fn and_select_parents(
         &self,
         selected: &HashSet<UniqueId>,
-        max_depth: Option<usize>,
+        max_depth: &Option<usize>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut parents: HashSet<UniqueId> = self.select_parents(selected, max_depth)?;
         parents.extend(selected.clone());
@@ -229,8 +229,8 @@ impl ParsedGraph {
         &self,
         selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let mut ancestors_for = self.select_children(selected, None)?;
+        let mut ancestors_for = self.select_children(selected, &None)?;
         ancestors_for.extend(ancestors_for.clone().into_iter());
-        self.select_parents(&mut ancestors_for, None)
+        self.select_parents(&mut ancestors_for, &None)
     }
 }

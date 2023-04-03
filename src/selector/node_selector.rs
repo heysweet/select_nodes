@@ -48,15 +48,15 @@ impl OtherSelectNodes for NodeSelector {
         selected: &HashSet<UniqueId>,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut additional: HashSet<UniqueId> = HashSet::new();
-
+        
         if spec.childrens_parents {
             additional.extend(self.graph.select_childrens_parents(&selected)?);
         } else {
             if spec.children {
-                additional.extend(self.graph.select_children(&selected, None)?);
+                additional.extend(self.graph.select_children(&selected, &spec.children_depth)?);
             }
             if spec.parents {
-                additional.extend(self.graph.select_parents(&selected, None)?);
+                additional.extend(self.graph.select_parents(&selected, &spec.parents_depth)?);
             }
         }
         Ok(additional)
@@ -196,7 +196,7 @@ impl NodeSelector {
             }
             Buildable => {
                 let selected_and_parents: HashSet<String> =
-                    self.graph.and_select_parents(&selected, None)?;
+                    self.graph.and_select_parents(&selected, &None)?;
                 for unique_id in indirect_nodes {
                     let Some(node) = self.graph.node_map.get(unique_id) else {
                         continue;
@@ -358,9 +358,9 @@ impl NodeSelector {
         let selected_and_parents: HashSet<UniqueId> = HashSet::new();
 
         if *indirect_selection == Buildable {
-            let selected_and_parents: HashSet<UniqueId> = self
+            let selected_and_parents = self
                 .graph
-                .select_parents(selected, None)?
+                .select_parents(selected, &None)?
                 .union(&self.graph.sources)
                 .map(|s| s.into())
                 .collect();
