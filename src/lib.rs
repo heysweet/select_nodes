@@ -30,30 +30,19 @@ impl dbt_node_selector::DbtNodeSelector for DbtNodeSelector {}
 //core/dbt/graph/selector.py
 impl dbt_node_selector::NodeSelector for NodeSelector {
     fn new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
-        NodeSelector::from(nodes, edges).and_then(|s| Ok(s.into()))
+        Self::_new(nodes, edges)
     }
 
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(selection_criteria);
-
-        let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
-
-        Ok(selected_set.into_iter().collect())
+        self._select(selector)
     }
 
     fn select_type(
         &self,
-        selector: UniqueId,
+        selector: String,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(selection_criteria);
-
-        let selected_set: HashSet<String> =
-            self.get_selected_type(&selection_group, &resource_type_filter)?;
-
-        Ok(selected_set.into_iter().collect())
+        self._select_type(selector, resource_type_filter)
     }
 
     fn select_included(
@@ -62,9 +51,6 @@ impl dbt_node_selector::NodeSelector for NodeSelector {
         selector: String,
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
-        todo!()
-        // let selected_set: HashSet<String> = self.select_type(selector, resource_type_filter)?;
-
-        // Ok(selected_set.into_iter().collect())
+        self._select_included(included_nodes, selector, resource_type_filter)
     }
 }

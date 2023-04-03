@@ -201,21 +201,25 @@ mod select_nodes_tests {
     fn it_should_select_all_parents() {
         let node_selector = get_test_node_selector(get_test_nodes(), get_test_edges());
 
-        let result =
-            node_selector.select_and_filter(None, &"1+and".to_string(), &ResourceTypeFilter::All);
+        let result = node_selector._select("1+andre".to_string());
 
-        let expected = get_expected(vec!["an", "and"]);
-        assert_eq!(result.unwrap(), expected);
+        let mut expected = get_expected(vec!["andr", "andre"]);
+        let mut result = result.unwrap();
+        result.sort();
+        expected.sort();
+        assert_eq!(result, expected);
     }
 
     #[test]
     fn it_should_select_all_ancestors() {
         let node_selector = get_test_node_selector(get_test_nodes(), get_test_edges());
 
-        let result =
-            node_selector.select_and_filter(None, &"+and".to_string(), &ResourceTypeFilter::All);
+        let result = node_selector._select("+andre".to_string());
 
-        let expected = get_expected(vec!["a", "an", "and"]);
-        assert_eq!(result.unwrap(), expected);
+        let mut expected = get_expected(vec!["a", "an", "and", "andr", "andre"]);
+        let mut result = result.unwrap();
+        result.sort();
+        expected.sort();
+        assert_eq!(result, expected);
     }
 }
