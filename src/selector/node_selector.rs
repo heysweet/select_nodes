@@ -9,7 +9,9 @@ use std::{
 use crate::graph::{node::GraphNode, parsed_graph::ParsedGraph};
 use crate::selector::spec::{IndirectSelection, SelectionCriteria, SelectionGroup, SelectionSpec};
 
-use crate::dbt_node_selector::{Edge, Node, ResourceTypeFilter, SelectionError, SelectorCreateError};
+use crate::dbt_node_selector::{
+    Edge, Node, ResourceTypeFilter, SelectionError, SelectorCreateError,
+};
 
 use crate::IndirectSelection::*;
 

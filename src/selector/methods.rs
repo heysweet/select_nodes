@@ -1,8 +1,8 @@
 use std::{path::Path, rc::Rc};
 
 use crate::{
-    graph::parsed_graph::ParsedGraph,
     dbt_node_selector::{NodeType, SelectionError},
+    graph::parsed_graph::ParsedGraph,
 };
 
 use super::MethodName;

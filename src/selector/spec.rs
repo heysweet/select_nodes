@@ -157,8 +157,8 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
-use crate::graph::node::GraphNode;
 use crate::dbt_node_selector::{NodeType, UniqueId};
+use crate::graph::node::GraphNode;
 use crate::SelectionError;
 use crate::SelectionError::*;
 
