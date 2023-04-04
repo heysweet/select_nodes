@@ -64,6 +64,8 @@ variant selection-error {
 resource node-selector {
     static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
+    update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
+
     select: func(selector: string) -> expected<list<unique-id>, selection-error>
 
     select-type: func(selector: string, resource-type-filter: resource-type-filter) -> expected<list<unique-id>, selection-error>

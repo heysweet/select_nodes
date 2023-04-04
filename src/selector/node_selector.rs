@@ -94,7 +94,11 @@ impl NodeSelector {
             .collect())
     }
 
-    pub fn from(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Self, SelectorCreateError> {
+    pub fn from(
+        nodes: Vec<Node>,
+        edges: Vec<Edge>,
+        previous_state: Option<Rc<ParsedGraph>>,
+    ) -> Result<Self, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, GraphNode>::new();
         for node in nodes.iter() {
             node_map.insert(node.unique_id.to_owned(), GraphNode::from(node)?);
@@ -108,7 +112,7 @@ impl NodeSelector {
         }
         Ok(Self {
             graph: ParsedGraph::from_parents(node_map, parent_map).into(),
-            previous_state: None.into(), //previous_state.and_then(|s| Some(s.graph.clone())),
+            previous_state,
         })
     }
 
@@ -410,7 +414,15 @@ impl NodeSelector {
 
 impl NodeSelector {
     pub fn _new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
-        NodeSelector::from(nodes, edges).and_then(|s| Ok(s.into()))
+        NodeSelector::from(nodes, edges, None).and_then(|s| Ok(s.into()))
+    }
+
+    pub fn _update(
+        &self,
+        nodes: Vec<Node>,
+        edges: Vec<Edge>,
+    ) -> Result<Handle<Self>, SelectorCreateError> {
+        NodeSelector::from(nodes, edges, Some(self.graph.to_owned())).and_then(|s| Ok(s.into()))
     }
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {

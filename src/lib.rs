@@ -33,6 +33,14 @@ impl dbt_node_selector::NodeSelector for NodeSelector {
         Self::_new(nodes, edges)
     }
 
+    fn update(
+        &self,
+        nodes: Vec<Node>,
+        edges: Vec<Edge>,
+    ) -> Result<Handle<Self>, SelectorCreateError> {
+        self._update(nodes, edges)
+    }
+
     fn select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         self._select(selector)
     }
