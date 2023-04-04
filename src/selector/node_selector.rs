@@ -67,33 +67,6 @@ impl OtherSelectNodes for NodeSelector {
 }
 
 impl NodeSelector {
-    pub fn select_and_filter(
-        &self,
-        included_nodes: Option<HashSet<UniqueId>>,
-        selector: &String,
-        resource_type_filter: &ResourceTypeFilter,
-    ) -> Result<Vec<UniqueId>, SelectionError> {
-        let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let unfiltered_result = selection_criteria.method.search(
-            &self.previous_state.clone(),
-            &self.graph,
-            &selection_criteria.value,
-        )?;
-        Ok(unfiltered_result
-            .iter()
-            .filter(|id| match &included_nodes {
-                Some(included_nodes) => self.graph.is_node(id, &|n| {
-                    included_nodes.contains(id.as_str())
-                        && resource_type_filter.should_include(n.resource_type)
-                }),
-                None => self.graph.is_node(id, &|n| {
-                    resource_type_filter.should_include(n.resource_type)
-                }),
-            })
-            .map(|s| s.to_owned())
-            .collect())
-    }
-
     pub fn from(
         nodes: Vec<Node>,
         edges: Vec<Edge>,
@@ -121,8 +94,7 @@ impl NodeSelector {
         included_nodes: &HashSet<UniqueId>,
         spec: &SelectionCriteria,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let filtered_graph = &self.graph.filter(&included_nodes);
-        let result = spec.method.search(&None, filtered_graph, &spec.value)?;
+        let result = spec.method.search(&None, &self.graph, included_nodes, &spec.value)?;
         Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
     }
 

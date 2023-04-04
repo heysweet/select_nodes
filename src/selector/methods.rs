@@ -1,8 +1,8 @@
 /// core/dbt/graph/selector_methods.py
-use std::{path::Path, rc::Rc};
+use std::{path::Path, rc::Rc, collections::HashSet};
 
 use crate::{
-    dbt_node_selector::{NodeType, SelectionError},
+    dbt_node_selector::{NodeType, SelectionError, UniqueId},
     graph::parsed_graph::ParsedGraph,
 };
 
@@ -85,11 +85,12 @@ impl MethodName {
     pub fn search(
         &self,
         previous_state: &Option<Rc<ParsedGraph>>,
-        subgraph: &ParsedGraph,
+        graph: &ParsedGraph,
+        included_nodes: &HashSet<UniqueId>,
         selector: &str,
     ) -> core::result::Result<Vec<String>, SelectionError> {
         match self {
-            FQN => Ok(subgraph
+            FQN => Ok(graph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -117,7 +118,7 @@ impl MethodName {
                 unimplemented!()
             }
 
-            File => Ok(subgraph
+            File => Ok(graph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -125,7 +126,7 @@ impl MethodName {
                 })
                 .collect::<Vec<String>>()),
 
-            Package => Ok(subgraph
+            Package => Ok(graph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -150,7 +151,7 @@ impl MethodName {
                 match resource_type {
                     Err(_) => Err(NoMatchingResourceType(selector.to_string())),
                     Ok(resource_type) => {
-                        let iter = subgraph.node_map.iter();
+                        let iter = graph.node_map.iter();
                         let iter = iter.filter(|(_, node)| node.resource_type == resource_type);
                         let iter = iter.map(|(id, _)| id.clone());
                         Ok(iter.collect())
