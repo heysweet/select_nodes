@@ -85,11 +85,11 @@ impl MethodName {
     pub fn search(
         &self,
         previous_state: &Option<Rc<ParsedGraph>>,
-        graph: &ParsedGraph,
+        subgraph: &ParsedGraph,
         selector: &str,
     ) -> core::result::Result<Vec<String>, SelectionError> {
         match self {
-            FQN => Ok(graph
+            FQN => Ok(subgraph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -117,7 +117,7 @@ impl MethodName {
                 unimplemented!()
             }
 
-            File => Ok(graph
+            File => Ok(subgraph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -125,7 +125,7 @@ impl MethodName {
                 })
                 .collect::<Vec<String>>()),
 
-            Package => Ok(graph
+            Package => Ok(subgraph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
@@ -150,7 +150,7 @@ impl MethodName {
                 match resource_type {
                     Err(_) => Err(NoMatchingResourceType(selector.to_string())),
                     Ok(resource_type) => {
-                        let iter = graph.node_map.iter();
+                        let iter = subgraph.node_map.iter();
                         let iter = iter.filter(|(_, node)| node.resource_type == resource_type);
                         let iter = iter.map(|(id, _)| id.clone());
                         Ok(iter.collect())
@@ -159,6 +159,12 @@ impl MethodName {
             }
 
             State => {
+                let previous_state =
+                    previous_state
+                        .clone()
+                        .ok_or(StateSelectorWithNoPreviousState(
+                            "No comparison manifest in _macros_modified".to_string(),
+                        ))?;
                 unimplemented!()
             }
 

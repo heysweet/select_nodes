@@ -58,6 +58,7 @@ variant selection-error {
     invalid-indirect-selection-error(string),
     bool-input-error(string),
     no-nodes-for-selection-criteria(string),
+    state-selector-with-no-previous-state(string),
 }
 
 resource node-selector {

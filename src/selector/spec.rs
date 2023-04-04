@@ -212,6 +212,9 @@ impl Display for SelectionError {
                     raw
                 )
             }
+            StateSelectorWithNoPreviousState(warning) => {
+                write!(f, "{}", warning)
+            }
         }
     }
 }
