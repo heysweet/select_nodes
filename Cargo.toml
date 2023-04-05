@@ -1,8 +1,8 @@
 [package]
-name = "select_nodes"
+name = "dbt-node-selector"
 version = "0.1.0"
 edition = "2021"
-description = "dbt Select Nodes library"
+description = "dbt Node Selector library"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
