@@ -25,12 +25,28 @@ use dbt_node_selector::{Edge, Node, ResourceTypeFilter, SelectionError, Selector
 
 pub struct DbtNodeSelector;
 
-impl dbt_node_selector::DbtNodeSelector for DbtNodeSelector {}
+impl dbt_node_selector::DbtNodeSelector for DbtNodeSelector {
+    fn drop_node_selector(val:crate::NodeSelector){
+        drop(val);
+    }
+
+    fn sum(a: u32, b: u32) -> u32 {
+        a + b
+    }
+}
 
 //core/dbt/graph/selector.py
 impl dbt_node_selector::NodeSelector for NodeSelector {
     fn new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
         Self::_new(nodes, edges)
+    }
+
+    fn num_nodes(&self) -> u32 {
+        self.graph.node_map.keys().len().try_into().unwrap()
+    }
+
+    fn does_node_exist(&self, unique_id: UniqueId) -> bool {
+        self.graph.node_map.contains_key(&unique_id)
     }
 
     fn update(

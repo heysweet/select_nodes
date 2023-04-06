@@ -61,8 +61,14 @@ variant selection-error {
     state-selector-with-no-previous-state(string),
 }
 
+sum: func(a: u32, b: u32) -> u32
+
 resource node-selector {
     static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
+
+    num-nodes: func() -> u32
+
+    does-node-exist: func(node-id: unique-id) -> bool
 
     update: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
