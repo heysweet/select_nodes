@@ -63,6 +63,8 @@ variant selection-error {
 
 sum: func(a: u32, b: u32) -> u32
 
+create-node-selector: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
+
 resource node-selector {
     static new: func(nodes: list<node>, edges: list<edge>) -> expected<node-selector, selector-create-error>
 
