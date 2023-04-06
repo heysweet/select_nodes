@@ -1,8 +1,8 @@
 [package]
-name = "dbt-node-selector"
-version = "0.1.0"
+name = "dbt_node_selector"
+version = "0.1.2"
 edition = "2021"
-description = "dbt Node Selector library"
+description = "dbt Node Selector library (In Development)"
 keywords = ["dbt", "analytics", "dag", "graph"]
 authors = ["Andrew Sweet <andrew.sweet@dbtlabs.com>"]
 include = ["LICENSE", "Cargo.toml", "src/**/*.rs"]
