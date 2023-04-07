@@ -1,6 +1,6 @@
 [package]
-name = "dbt-labs/node_selector"
-version = "0.1.6"
+name = "dbt_node_selector"
+version = "0.1.8"
 edition = "2021"
 description = "dbt Node Selector library (In Development)"
 keywords = ["dbt", "analytics", "dag", "graph"]

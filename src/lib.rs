@@ -26,17 +26,6 @@ use dbt_node_selector::{Edge, Node, ResourceTypeFilter, SelectionError, Selector
 pub struct DbtNodeSelector;
 
 impl dbt_node_selector::DbtNodeSelector for DbtNodeSelector {
-    fn drop_node_selector(val:crate::NodeSelector){
-        drop(val);
-    }
-
-    fn sum(a: u32, b: u32) -> u32 {
-        a + b
-    }
-
-    fn create_node_selector(nodes:Vec<Node>,edges:Vec<Edge>,) -> Result<wai_bindgen_rust::Handle<crate::NodeSelector>,SelectorCreateError> {
-        NodeSelector::_new(nodes, edges)
-    }
 }
 
 //core/dbt/graph/selector.py
