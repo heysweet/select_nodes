@@ -65,7 +65,7 @@ impl ParsedGraph {
     ) -> HashSet<UniqueId> {
         included
             .iter()
-            .filter_map(|(id, node)| match (node.resource_type == resource_type) {
+            .filter_map(|(id, node)| match node.resource_type == resource_type {
                 true => Some(id.to_string()),
                 false => None,
             })
