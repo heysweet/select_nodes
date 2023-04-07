@@ -1,11 +1,11 @@
 [package]
 name = "dbt_node_selector"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 description = "dbt Node Selector library (In Development)"
 keywords = ["dbt", "analytics", "dag", "graph"]
 authors = ["Andrew Sweet <andrew.sweet@dbtlabs.com>"]
-include = ["LICENSE", "Cargo.toml", "src/**/*.rs"]
+include = ["LICENSE", "Cargo.toml", "src/**/*.rs", "target/wasm32-unknown-unknown/release/dbt_node_selector.wasm"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

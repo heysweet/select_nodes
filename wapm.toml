@@ -1,6 +1,6 @@
 [package]
 name = "dbt_node_selector"
-version = "0.1.9"
+version = "0.1.10"
 description = "dbt Node Selector library (In Development)"
 license = "Apache 2.0"
 repository = "https://github.com/heysweet/select_nodes"
