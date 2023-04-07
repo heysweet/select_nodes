@@ -94,7 +94,9 @@ impl NodeSelector {
         included_nodes: &HashSet<UniqueId>,
         spec: &SelectionCriteria,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let result = spec.method.search(&None, &self.graph, included_nodes, &spec.value)?;
+        let result = spec
+            .method
+            .search(&None, &self.graph, included_nodes, &spec.value)?;
         Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
     }
 

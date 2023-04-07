@@ -1,5 +1,5 @@
 /// core/dbt/graph/selector_methods.py
-use std::{path::Path, rc::Rc, collections::HashSet};
+use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
     dbt_node_selector::{NodeType, SelectionError, UniqueId},
