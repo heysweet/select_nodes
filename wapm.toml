@@ -1,10 +1,10 @@
 [package]
 name = "dbt_node_selector"
-version = "0.1.10"
+version = "0.1.11"
 description = "dbt Node Selector library (In Development)"
 license = "Apache 2.0"
 repository = "https://github.com/heysweet/select_nodes"
 
 [[module]]
-name = "dbt_node_selector"
+name = "node_selector_wasm"
 source = "target/wapm/dbt_node_selector.wasm"
