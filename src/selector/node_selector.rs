@@ -2,8 +2,9 @@ use wai_bindgen_rust::Handle;
 
 use crate::graph::UniqueId;
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 
 use crate::graph::{node::GraphNode, parsed_graph::ParsedGraph};
@@ -14,10 +15,66 @@ use crate::dbt_node_selector::{
 };
 
 use crate::IndirectSelection::*;
+use crate::SelectionError::*;
+
+use super::state_selector_method::{StateSelectorMethod};
+
+pub struct PreviousState {
+    pub graph: Option<Rc<ParsedGraph>>,
+    /// modified_macros is a cache of computed macros, which allows for reuse
+    /// of prior modified macros computations.
+    pub modified_macros: RefCell<Option<Vec<String>>>,
+}
+
+impl PreviousState {
+    pub fn default() -> Self {
+        Self {
+            graph: None,
+            modified_macros: None.into(),
+        }
+    }
+
+    pub fn from_graph(prev_graph: Rc<ParsedGraph>) -> Self {
+        Self {
+            graph: Some(prev_graph),
+            modified_macros: None.into(),
+        }
+    }
+
+    pub fn from_graph_and_macros(
+        prev_graph: Rc<ParsedGraph>,
+        modified_macros: Vec<String>,
+    ) -> Self {
+        Self {
+            graph: Some(prev_graph),
+            modified_macros: Some(modified_macros).into(),
+        }
+    }
+
+    pub fn get_modified_macros(&self, current_graph: &ParsedGraph) -> Result<Option<Vec<String>>, SelectionError> {
+        let previous_graph = &self.graph;
+        let modified_macros = self.modified_macros.borrow();
+        let modified_macros = modified_macros.as_ref();
+        match (previous_graph, modified_macros) {
+            (_, Some(previous_macros)) => Ok(Some(previous_macros.to_vec())),
+            (None, _) => Err(RequiresPreviousState("No previous state to generate modified macros.".to_string())),
+            (Some(previous_graph), _) => {
+                let modified_macros = StateSelectorMethod::generate_modified_macros(
+                    current_graph,
+                    &(previous_graph.clone()),
+                )?;
+                Ok(Some(modified_macros))
+            }
+        }
+    }
+}
 
 pub struct NodeSelector {
     pub graph: Rc<ParsedGraph>,
-    pub previous_state: Option<Rc<ParsedGraph>>,
+    pub previous_state: Option<Rc<PreviousState>>,
+}
+
+impl NodeSelector {
 }
 
 type DirectNodes = HashSet<UniqueId>;
@@ -68,9 +125,9 @@ impl OtherSelectNodes for NodeSelector {
 
 impl NodeSelector {
     pub fn from(
-        nodes: Vec<Node>,
-        edges: Vec<Edge>,
-        previous_state: Option<Rc<ParsedGraph>>,
+        nodes: &Vec<Node>,
+        edges: &Vec<Edge>,
+        previous_state: Option<Rc<PreviousState>>,
     ) -> Result<Self, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, GraphNode>::new();
         for node in nodes.iter() {
@@ -83,8 +140,9 @@ impl NodeSelector {
             parents.extend(edge.parents.to_owned());
             parent_map.insert(edge.unique_id.to_owned(), parents);
         }
+        let graph = Rc::new(ParsedGraph::from_parents(node_map, parent_map));
         Ok(Self {
-            graph: ParsedGraph::from_parents(node_map, parent_map).into(),
+            graph,
             previous_state,
         })
     }
@@ -94,10 +152,29 @@ impl NodeSelector {
         included_nodes: &HashSet<UniqueId>,
         spec: &SelectionCriteria,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let result = spec
-            .method
-            .search(&None, &self.graph, included_nodes, &spec.value)?;
-        Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
+
+        let new_previous_state = spec.method.prepare(self.graph.clone(), &self.previous_state);
+
+        match (self.previous_state.clone(), new_previous_state) {
+            (Some(saved_previous_state), Some(Ok(new_previous_state))) => {
+                // Write to the modified_macros cache whenever we get new_previous_state
+                *saved_previous_state.modified_macros.borrow_mut() = new_previous_state.modified_macros.into_inner();
+                
+                let result = spec
+                    .method
+                    .search(&None, self.graph.clone(), included_nodes, &spec.value)?;
+                Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
+            },
+            (_, None) => {
+                let result = spec
+                    .method
+                    .search(&None, self.graph.clone(), included_nodes, &spec.value)?;
+                Ok(HashSet::from_iter(result.iter().map(|s| s.to_owned())))
+            },
+            (_, Some(Err(e))) => {return Err(e)},
+            (_, _) => {return Err(RequiresPreviousState("Unknown issue with previous state".to_string()))},
+        }
+        
     }
 
     fn successors(&self, node_id: &UniqueId) -> Option<impl Iterator<Item = &UniqueId>> {
@@ -388,7 +465,7 @@ impl NodeSelector {
 
 impl NodeSelector {
     pub fn _new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
-        NodeSelector::from(nodes, edges, None).and_then(|s| Ok(s.into()))
+        NodeSelector::from(&nodes, &edges, None).and_then(|s| Ok(s.into()))
     }
 
     pub fn _update(
@@ -396,12 +473,14 @@ impl NodeSelector {
         nodes: Vec<Node>,
         edges: Vec<Edge>,
     ) -> Result<Handle<Self>, SelectorCreateError> {
-        NodeSelector::from(nodes, edges, Some(self.graph.to_owned())).and_then(|s| Ok(s.into()))
+        let previous_state = PreviousState::from_graph(self.graph.clone());
+        NodeSelector::from(&nodes, &edges, Some(Rc::new(previous_state)))
+            .and_then(|s| Ok(s.into()))
     }
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
 
         let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
 
@@ -414,7 +493,7 @@ impl NodeSelector {
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
 
         let selected_set: HashSet<String> =
             self.get_selected_type(&selection_group, &resource_type_filter)?;

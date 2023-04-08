@@ -128,7 +128,7 @@ mod select_nodes_tests {
     }
 
     fn get_test_node_selector(nodes: Vec<Node>, edges: Vec<Edge>) -> NodeSelector {
-        let node_selector = NodeSelector::from(nodes, edges, None);
+        let node_selector = NodeSelector::from(&nodes, &edges, None);
         node_selector.unwrap()
     }
 

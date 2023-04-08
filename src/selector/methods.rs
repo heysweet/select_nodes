@@ -6,7 +6,7 @@ use crate::{
     graph::parsed_graph::ParsedGraph,
 };
 
-use super::MethodName;
+use super::{state_selector_method::StateSelectorMethod, MethodName, node_selector::{PreviousState, NodeSelector}};
 use crate::dbt_node_selector::SelectionError::*;
 
 use MethodName::*;
@@ -82,13 +82,23 @@ impl MethodName {
         }
     }
 
+    /// Some methods (StateSelectorMethod) use prepare in order to update 
+    /// cached state.
+    pub fn prepare(&self, graph: Rc<ParsedGraph>, previous_state: &Option<Rc<PreviousState>>) -> Option<Result<PreviousState, SelectionError>> {
+        match self {
+            State => Some(StateSelectorMethod::prepare(graph, previous_state)),
+            _ => None
+        }
+        
+    }
+
     pub fn search(
         &self,
-        previous_state: &Option<Rc<ParsedGraph>>,
-        graph: &ParsedGraph,
+        previous_state: &Option<Rc<PreviousState>>,
+        graph: Rc<ParsedGraph>,
         included_nodes: &HashSet<UniqueId>,
         selector: &str,
-    ) -> core::result::Result<Vec<String>, SelectionError> {
+    ) -> Result<Vec<String>, SelectionError> {
         match self {
             FQN => Ok(graph
                 .node_map
@@ -159,15 +169,7 @@ impl MethodName {
                 }
             }
 
-            State => {
-                let previous_state =
-                    previous_state
-                        .clone()
-                        .ok_or(StateSelectorWithNoPreviousState(
-                            "No comparison manifest in _macros_modified".to_string(),
-                        ))?;
-                unimplemented!()
-            }
+            State => StateSelectorMethod::search(previous_state, graph, included_nodes, selector),
 
             Exposure => {
                 unimplemented!()
@@ -177,7 +179,7 @@ impl MethodName {
                 unimplemented!()
             }
 
-            Result => {
+            RunResult => {
                 unimplemented!()
             }
 

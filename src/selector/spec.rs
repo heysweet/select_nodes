@@ -212,7 +212,7 @@ impl Display for SelectionError {
                     raw
                 )
             }
-            StateSelectorWithNoPreviousState(warning) => {
+            RequiresPreviousState(warning) => {
                 write!(f, "{}", warning)
             }
         }
@@ -411,13 +411,13 @@ impl SelectionGroup {
         self.selection_method.combine_selections(&selections)
     }
 
-    pub fn from_criteria(selection_criteria: SelectionCriteria) -> Self {
+    pub fn from_criteria(selection_criteria: &SelectionCriteria) -> Self {
         Self {
             components: vec![],
             indirect_selection: selection_criteria.indirect_selection,
             expect_exists: false,
             raw: selection_criteria.raw.clone(),
-            selection_method: SelectionSpec::SelectionCriteria(selection_criteria),
+            selection_method: SelectionSpec::SelectionCriteria(selection_criteria.clone()),
         }
     }
     // def get_selection_spec(self) -> SelectionSpec:

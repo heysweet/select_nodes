@@ -3,6 +3,7 @@ pub mod methods;
 pub mod node_selector;
 pub mod resource_type_filter;
 pub mod spec;
+pub mod state_selector_method;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 enum AccessType {
@@ -44,7 +45,7 @@ pub enum MethodName {
     State,
     Exposure,
     Metric,
-    Result,
+    RunResult,
     SourceStatus,
     Wildcard,
 }
@@ -78,7 +79,7 @@ impl MethodName {
             State => "state",
             Exposure => "exposure",
             Metric => "metric",
-            Result => "result",
+            RunResult => "result",
             SourceStatus => "source_status",
             Wildcard => "wildcard",
         }
@@ -100,7 +101,7 @@ impl MethodName {
             "state" => Some(State),
             "exposure" => Some(Exposure),
             "metric" => Some(Metric),
-            "result" => Some(Result),
+            "result" => Some(RunResult),
             "source_status" => Some(SourceStatus),
             "wildcard" => Some(Wildcard),
             _ => None,
