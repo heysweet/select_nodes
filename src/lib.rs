@@ -10,14 +10,11 @@ wai_bindgen_rust::export!("dbt-node-selector.wai");
 mod graph;
 mod selector;
 
-use std::collections::HashSet;
-
 use crate::graph::UniqueId;
 
-use graph::node::GraphNode;
 use selector::{
-    node_selector::NodeSelector,
-    spec::{IndirectSelection, SelectionCriteria, SelectionGroup},
+    node_selector::NodeSelector, 
+    spec::IndirectSelection,
 };
 use wai_bindgen_rust::Handle;
 

@@ -46,14 +46,14 @@ impl StateSelectorMethod {
         let previous_graph = previous_graph.clone().ok_or(RequiresPreviousState(
             "No previous graph available for comparison.".to_string(),
         ))?;
-        let old_macros = &previous_graph.macros;
-        let new_macros = &graph.macros;
+        let old_macros = &previous_graph.get_macros();
+        let new_macros = &graph.get_macros();
 
         let mut modified: Vec<String> = vec![];
-        for uid in new_macros {
-            let new_macro = graph.macros.get(uid).unwrap();
+        for (uid, new_macro) in new_macros {
+            
             if let Some(old_macro) = old_macros.get(uid) {
-                if new_macro.macro_sql != old_macro.macro_sql {
+                if new_macro.macro_node.macro_sql != old_macro.macro_node.macro_sql {
                     modified.push(uid.to_string());
                 }
             } else {
@@ -61,8 +61,8 @@ impl StateSelectorMethod {
             }
         }
 
-        for uid in old_macros {
-            if !new_macros.contains(uid) {
+        for (uid, _) in old_macros {
+            if !new_macros.contains_key(uid) {
                 modified.push(uid.to_string())
             }
         }

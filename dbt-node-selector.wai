@@ -1,38 +1,10 @@
-type unique-id = string
-
-record node {
-    unique-id: unique-id,
-    name: string,
-    resource-type: string,
-    package-name: string,
-    path: string,
-    original-file-path: string,
-    depends-on: list<unique-id>,
-    /// Fully qualified name
-    fqn: list<string>
-}
+use * from node
 
 record edge {
     unique-id: unique-id,
     parents: list<unique-id>
 }
 
-variant node-type {
-    model,
-    analysis,
-    test,
-    snapshot,
-    operation,
-    seed,
-    rpc,
-    sql-operation,
-    doc,
-    source,
-    macro,
-    exposure,
-    metric,
-    group
-}
 
 variant resource-type-filter {
     all,

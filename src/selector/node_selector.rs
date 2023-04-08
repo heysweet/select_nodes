@@ -1,13 +1,12 @@
 use wai_bindgen_rust::Handle;
 
-use crate::graph::UniqueId;
+use crate::graph::{UniqueId, node::ParsedNode, parsed_graph::ParsedGraph};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    rc::{Rc, Weak},
+    rc::Rc,
 };
 
-use crate::graph::{node::GraphNode, parsed_graph::ParsedGraph};
 use crate::selector::spec::{IndirectSelection, SelectionCriteria, SelectionGroup, SelectionSpec};
 
 use crate::dbt_node_selector::{
@@ -81,7 +80,7 @@ type DirectNodes = HashSet<UniqueId>;
 type IndirectNodes = HashSet<UniqueId>;
 
 trait NodeMatch {
-    fn node_is_match(&self, node: GraphNode) -> bool;
+    fn node_is_match(&self, node: ParsedNode) -> bool;
 }
 
 trait OtherSelectNodes {
@@ -129,9 +128,9 @@ impl NodeSelector {
         edges: &Vec<Edge>,
         previous_state: Option<Rc<PreviousState>>,
     ) -> Result<Self, SelectorCreateError> {
-        let mut node_map = HashMap::<UniqueId, GraphNode>::new();
+        let mut node_map = HashMap::<UniqueId, ParsedNode>::new();
         for node in nodes.iter() {
-            node_map.insert(node.unique_id.to_owned(), GraphNode::from(node)?);
+            node_map.insert(node.unique_id.to_owned(), ParsedNode::from(node)?);
         }
 
         let mut parent_map = HashMap::<UniqueId, HashSet<UniqueId>>::new();
@@ -304,7 +303,7 @@ impl NodeSelector {
         //  core/dbt/contracts/graph/nodes.py
         match self.graph.node_map.get(unique_id) {
             None => Err(SelectionError::NodeNotInGraph(unique_id.to_string())),
-            Some(node) => Ok(resource_type_filter.should_include(node.resource_type)),
+            Some(node) => Ok(resource_type_filter.should_include(&node.resource_type)),
         }
     }
 

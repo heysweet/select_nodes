@@ -1,0 +1,92 @@
+type unique-id = string
+
+variant access-type {
+    protected,
+    private,
+    public
+}
+
+/// Documentation and Macros don't have fqn
+record graph-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+// Has all graph-node fields
+record parsed-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>
+}
+
+// Has all parsed-node fields
+record compiled-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>,
+}
+
+record macro-node {
+    macro-sql: string,
+    depends-on: list<unique-id>,
+}
+
+// Has all graph-node fields
+record source-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+// Has all graph-node fields
+record exposure-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+// Has all graph-node fields
+record metric-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+// Has all compiled-node fields
+record model-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>,
+    access: access-type
+}
+
+record doc-node {
+    block-contents: string
+}
+
+
+
+variant node-type {
+    model(model-node),
+    analysis(compiled-node),
+    test(graph-node),
+    snapshot(graph-node),
+    /// Operation, or HookNode
+    operation(graph-node),
+    seed(parsed-node),
+    rpc(compiled-node),
+    sql-operation(compiled-node),
+    source(source-node),
+    exposure(exposure-node),
+    metric(metric-node),
+    group(graph-node),
+    doc(doc-node),
+    macro(macro-node),
+}
+
+record node {
+    unique-id: unique-id,
+    name: string,
+    node-type: node-type,
+    package-name: string,
+    path: string,
+    original-file-path: string,
+    depends-on: list<unique-id>,
+}

@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod select_nodes_tests {
+    use crate::{dbt_node_selector::NodeType, graph::node::NodeTypeKey};
+
     use super::super::*;
+    use crate::dbt_node_selector::*;
 
     /// Any node with an id: "PREFIX_" will have the node "PREFIX" as
     /// a direct parent.
@@ -104,20 +107,43 @@ mod select_nodes_tests {
         ]
     }
 
-    fn make_node(id: impl Into<String>) -> Node {
+    fn make_resource_type(package_name: String, id: String, resource_type: &str) -> Result<NodeType, SelectorCreateError> {
+        let resource_type = NodeTypeKey::from_key(resource_type)?;
+        let fqn: Vec<String> = [package_name, format!("{}", id)].to_vec();
+        match resource_type {
+            NodeTypeKey::Model => {
+                Ok(NodeType::Model(ModelNode{access: AccessType::Public, depends_on: vec![], fqn: vec![]}))
+            },
+            NodeTypeKey::Analysis => Ok(NodeType::Analysis(CompiledNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Test => Ok(NodeType::Test(GraphNode{fqn: vec![]})),
+            NodeTypeKey::Snapshot => Ok(NodeType::Snapshot(GraphNode{fqn: vec![]})),
+            NodeTypeKey::Operation => Ok(NodeType::Operation(GraphNode{fqn: vec![]})),
+            NodeTypeKey::Seed => Ok(NodeType::Seed(ParsedNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Rpc => Ok(NodeType::Rpc(CompiledNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::SqlOperation => Ok(NodeType::SqlOperation(CompiledNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Doc => Ok(NodeType::Doc(DocNode{block_contents: "".to_string()})),
+            NodeTypeKey::Source => Ok(NodeType::Source(SourceNode{fqn: vec![]})),
+            NodeTypeKey::Macro => Ok(NodeType::Macro(MacroNode{macro_sql: "".to_string(), depends_on: vec![]})),
+            NodeTypeKey::Exposure => Ok(NodeType::Exposure(ExposureNode{fqn: vec![]})),
+            NodeTypeKey::Metric => Ok(NodeType::Metric(MetricNode{fqn: vec![]})),
+            NodeTypeKey::Group => Ok(NodeType::Group(GraphNode{fqn: vec![]})),
+        }
+    }
+
+    fn make_node(id: impl Into<String>) -> Result<Node, SelectorCreateError> {
         let id: String = id.into();
         let package_name = format!("pkg_{}", &id);
         let resource_type = if id.len() == 1 { "source" } else { "model" };
-        Node {
+        let node_type = make_resource_type(package_name, id, resource_type)?;
+        Ok(Node {
             unique_id: id.clone(),
             depends_on: vec!["test".to_string()],
             name: format!("name_{}", &id),
-            resource_type: resource_type.to_string(),
+            node_type,
             package_name: package_name.clone(),
             path: format!("path_{}", &id),
             original_file_path: format!("opath_{}", &id),
-            fqn: [package_name.to_string(), format!("{}", &id)].to_vec(),
-        }
+        })
     }
 
     fn get_test_nodes() -> Vec<Node> {

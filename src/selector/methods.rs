@@ -3,7 +3,7 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
     dbt_node_selector::{NodeType, SelectionError, UniqueId},
-    graph::parsed_graph::ParsedGraph,
+    graph::{parsed_graph::ParsedGraph, node::NodeTypeKey},
 };
 
 use super::{state_selector_method::StateSelectorMethod, MethodName, node_selector::{PreviousState, NodeSelector}};
@@ -55,7 +55,8 @@ impl MethodName {
         return true;
     }
 
-    fn is_node_match(&self, qualified_name: &str, fqn: &Vec<String>) -> bool {
+    fn is_node_match(&self, qualified_name: &str, fqn: &Option<Vec<String>>) -> bool {
+        let Some(fqn) = fqn else { return false };
         if Self::is_selected_node(fqn, qualified_name) {
             true
         } else {
@@ -104,7 +105,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    if self.is_node_match(selector, &node.fqn) {
+                    if self.is_node_match(selector, &node.fqn()) {
                         Some(id.to_string())
                     } else {
                         None
@@ -157,12 +158,12 @@ impl MethodName {
             }
 
             ResourceType => {
-                let resource_type = NodeType::from_string(selector);
-                match resource_type {
+                let resource_key = NodeTypeKey::from_key(selector);
+                match resource_key {
                     Err(_) => Err(NoMatchingResourceType(selector.to_string())),
-                    Ok(resource_type) => {
+                    Ok(resource_key) => {
                         let iter = graph.node_map.iter();
-                        let iter = iter.filter(|(_, node)| node.resource_type == resource_type);
+                        let iter = iter.filter(|(_, node)| node.resource_type.key() == resource_key);
                         let iter = iter.map(|(id, _)| id.clone());
                         Ok(iter.collect())
                     }
