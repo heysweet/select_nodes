@@ -133,28 +133,28 @@ mod select_nodes_tests {
     fn make_node(id: impl Into<String>) -> Result<Node, SelectorCreateError> {
         let id: String = id.into();
         let package_name = format!("pkg_{}", &id);
-        let resource_type = if id.len() == 1 { "source" } else { "model" };
-        let node_type = make_resource_type(package_name, id, resource_type)?;
-        Ok(Node {
+        let resource_type = if (&id).len() == 1 { "source" } else { "model" };
+        let node_type = make_resource_type(package_name.clone(), id.clone(), resource_type)?;
+        Ok(crate::dbt_node_selector::Node {
             unique_id: id.clone(),
             depends_on: vec!["test".to_string()],
             name: format!("name_{}", &id),
-            node_type,
             package_name: package_name.clone(),
             path: format!("path_{}", &id),
             original_file_path: format!("opath_{}", &id),
+            node_type,
         })
     }
 
     fn get_test_nodes() -> Vec<Node> {
         get_test_edges()
             .iter()
-            .map(|edge| make_node(&edge.unique_id))
+            .filter_map(|edge| make_node(&edge.unique_id).ok())
             .collect()
     }
 
-    fn get_test_node_selector(nodes: Vec<Node>, edges: Vec<Edge>) -> NodeSelector {
-        let node_selector = NodeSelector::from(&nodes, &edges, None);
+    fn get_test_node_selector(nodes: Vec<Node>, edges: Vec<Edge>) -> crate::selector::node_selector::NodeSelector {
+        let node_selector = crate::selector::node_selector::NodeSelector::from(&nodes, &edges, None);
         node_selector.unwrap()
     }
 

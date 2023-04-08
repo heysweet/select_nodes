@@ -73,9 +73,6 @@ pub struct NodeSelector {
     pub previous_state: Option<Rc<PreviousState>>,
 }
 
-impl NodeSelector {
-}
-
 type DirectNodes = HashSet<UniqueId>;
 type IndirectNodes = HashSet<UniqueId>;
 
