@@ -1,73 +1,117 @@
-use crate::dbt_node_selector::{
-    CompiledNode, DocNode, ExposureNode, GraphNode, MacroNode, MetricNode, ModelNode, NodeType,
-    ParsedNode, SourceNode,
-};
+use std::collections::HashMap;
 
-use super::node::BaseNode;
+use crate::dbt_node_selector::*;
 
-trait HasFqn {
-    fn fqn(&self) -> Vec<String>;
-}
-impl HasFqn for GraphNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for ParsedNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for CompiledNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for SourceNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for ExposureNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for MetricNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
-impl HasFqn for ModelNode {
-    fn fqn(&self) -> Vec<String> {
-        self.fqn
-    }
-}
+use super::node::WrapperNode;
 
 trait FqnCompareExt {
     fn same_fqn(&self, other: &Self) -> bool;
 }
 
-impl<T> FqnCompareExt for T
-where
-    T: HasFqn,
-{
-    fn same_fqn(&self, other: &Self) -> bool {
-        self.fqn() == other.fqn()
+pub trait ComparableContents {
+    fn same_content(&self, other: &Self) -> bool;
+}
+
+pub trait GraphNodeExt {
+    fn fqn(&self) -> Vec<String>;
+}
+
+pub trait ParsedNodeExt: GraphNodeExt {
+    fn same_content(&self, other: &Self) -> bool;
+    fn fqn(&self) -> Vec<String>;
+    fn depends_on(&self) -> Vec<String>;
+    fn node_config(&self) -> HashMap<String, String>;
+
+    fn same_body(&self, other: &Self) -> bool;
+    fn same_config(&self, other: &Self) -> bool;
+    fn same_persisted_description(&self, other: &Self) -> bool;
+    fn same_database_representation(&self, other: &Self) -> bool;
+    fn same_contract(&self, other: &Self) -> bool;
+}
+
+pub trait CompiledNodeExt: ParsedNodeExt {
+    fn fqn(&self) -> Vec<String>;
+    fn depends_on(&self) -> Vec<String>;
+    fn node_config(&self) -> HashMap<String, String>;
+}
+
+macro_rules! impl_GraphNodeExt { 
+    ($T:ident) => {
+        impl GraphNodeExt for $T {
+            fn fqn(&self) -> Vec<String> { self.fqn }
+        }
     }
 }
 
-impl BaseNode {
-    pub fn same_contents(&self, other: Option<&BaseNode>) -> bool {
+macro_rules! impl_ParsedNodeExt { 
+    ($T:ident) => {
+        impl GraphNodeExt for $T {
+            fn fqn(&self) -> Vec<String> { self.fqn }
+        }
+    }
+}
+
+macro_rules! impl_CompiledNodeExt { 
+    ($T:ident) => {
+        impl GraphNodeExt for $T {
+            fn fqn(&self) -> Vec<String> { self.fqn }
+        }
+
+        impl ParsedNodeExt for $T {
+
+        }
+
+        impl CompiledNodeExt for $T {
+            fn depends_on(&self) -> Vec<String> { self.depends_on }
+            fn node_config(&self) -> HashMap<String, String> { self.node_config };
+        }
+    }
+}
+
+impl_GraphNodeExt!(TestNode);
+impl_GraphNodeExt!(SnapshotNode);
+impl_GraphNodeExt!(OperationNode);
+impl_GraphNodeExt!(GroupNode);
+impl_GraphNodeExt!(SourceNode);
+impl_GraphNodeExt!(ExposureNode);
+impl_GraphNodeExt!(MetricNode);
+
+impl_ParsedNodeExt!(SeedNode);
+
+impl_CompiledNodeExt!(AnalysisNode);
+impl_CompiledNodeExt!(ModelNode);
+impl_CompiledNodeExt!(RpcNode);
+impl_CompiledNodeExt!(SqlOperationNode);
+
+/// Or HookNode
+impl ComparableContents for OperationNode {
+    fn same_content(&self, other: &Self) -> bool {
+        todo!()
+    }
+}
+
+impl<T> FqnCompareExt for T
+where
+    T: GraphNodeExt,
+{
+    fn same_fqn(&self, other: &Self) -> bool {
+        let fqn_a = self.fqn();
+        let fqn_b = other.fqn();
+        &fqn_a.len() == &fqn_b.len() && fqn_a.iter().zip(&fqn_b).all(|(&a, &b)| a == b)
+    }
+}
+
+impl WrapperNode {
+    pub fn same_contents(&self, other: Option<&WrapperNode>) -> bool {
         match other {
             None => false,
-            Some(other) => self.resource_type.same_contents(&other.resource_type),
+            Some(other) => self.resource_type.same_content(&other.resource_type),
         }
     }
 }
 
 impl NodeType {
-    pub fn same_contents(&self, other: &Self) -> bool {
+    pub fn same_content(&self, other: &Self) -> bool {
         match (self, other) {
             (NodeType::Model(this), NodeType::Model(other)) => this.same_content(other),
             (NodeType::Analysis(this), NodeType::Analysis(other)) => this.same_content(other),
@@ -90,55 +134,16 @@ impl NodeType {
     }
 }
 
-pub trait CompareNode {
-    fn same_content(&self, other: &Self) -> bool;
-}
-
-impl CompareNode for ModelNode {
+impl ComparableContents for WrapperNode {
     fn same_content(&self, other: &Self) -> bool {
-        todo!()
+        self.resource_type.same_content(&other.resource_type)
     }
 }
 
-impl CompareNode for CompiledNode {
-    fn same_content(&self, other: &Self) -> bool {
-        todo!()
-    }
-}
-
-impl CompareNode for GraphNode {
-    fn same_content(&self, other: &Self) -> bool {
-        todo!()
-    }
-}
-
-impl ParsedNode {
-    pub fn same_body(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-
-    pub fn same_config(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-
-    pub fn same_persisted_description(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-
-    pub fn same_fqn(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-
-    pub fn same_database_representation(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-
-    pub fn same_contract(&self, other: &Self) -> bool {
-        unimplemented!()
-    }
-}
-
-impl CompareNode for ParsedNode {
+impl<T> ComparableContents for T
+where
+    T: ParsedNodeExt,
+{
     fn same_content(&self, other: &Self) -> bool {
         self.same_body(other)
             && self.same_config(other)
@@ -149,13 +154,13 @@ impl CompareNode for ParsedNode {
     }
 }
 
-impl CompareNode for SourceNode {
+impl ComparableContents for SourceNode {
     fn same_content(&self, other: &Self) -> bool {
         todo!()
     }
 }
 
-impl CompareNode for ExposureNode {
+impl ComparableContents for ExposureNode {
     fn same_content(&self, other: &Self) -> bool {
         self.same_fqn(other) && todo!()
         //   && self.same_exposure_type(other)
@@ -169,13 +174,13 @@ impl CompareNode for ExposureNode {
     }
 }
 
-impl CompareNode for MetricNode {
+impl ComparableContents for MetricNode {
     fn same_content(&self, other: &Self) -> bool {
         todo!()
     }
 }
 
-impl CompareNode for DocNode {
+impl ComparableContents for DocNode {
     /// The only thing that makes one doc different from another with the
     /// same name/package is its content
     fn same_content(&self, other: &Self) -> bool {
@@ -183,7 +188,7 @@ impl CompareNode for DocNode {
     }
 }
 
-impl CompareNode for MacroNode {
+impl ComparableContents for MacroNode {
     /// The only thing that makes one macro different from another with the
     /// same name/package is its content
     fn same_content(&self, other: &Self) -> bool {

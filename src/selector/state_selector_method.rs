@@ -2,7 +2,7 @@ use std::{collections::HashSet, rc::Rc};
 
 use crate::{
     dbt_node_selector::{SelectionError, UniqueId},
-    graph::{node::BaseNode, parsed_graph::ParsedGraph},
+    graph::{node_comparison::WrapperNodeExt, parsed_graph::ParsedGraph, node::WrapperNode},
 };
 
 use super::{methods::SelectorTarget, node_selector::PreviousState};
@@ -73,7 +73,7 @@ impl StateSelectorMethod {
     fn recursively_check_macros_modified(
         graph: &ParsedGraph,
         modified_macros: &HashSet<String>,
-        node: &BaseNode,
+        node: &WrapperNode,
         mut visited_macros: HashSet<UniqueId>,
     ) -> bool {
         for uid in node.depends_on_macros(graph) {
@@ -104,7 +104,7 @@ impl StateSelectorMethod {
     fn check_macros_modified(
         graph: &ParsedGraph,
         modified_macros: &HashSet<String>,
-        base_node: &BaseNode,
+        base_node: &WrapperNode,
     ) -> bool {
         if modified_macros.len() == 0 {
             false

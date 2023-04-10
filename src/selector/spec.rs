@@ -69,7 +69,7 @@ impl IndirectSelection {
     /// for indirect selection.
     /// Today, only Test nodes can be indirectly selected. In the future,
     /// other node types or invocation flags might qualify.
-    pub fn can_select_indirectly(node: &BaseNode) -> bool {
+    pub fn can_select_indirectly(node: &WrapperNode) -> bool {
         node.resource_type.key().eq(&NodeTypeKey::Test)
     }
 }
@@ -156,8 +156,9 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
-use crate::dbt_node_selector::{NodeType, UniqueId};
-use crate::graph::node::{BaseNode, NodeTypeKey};
+use crate::dbt_node_selector::UniqueId;
+use crate::graph::node::{NodeTypeKey, WrapperNode};
+use crate::graph::node_comparison::WrapperNodeExt;
 use crate::SelectionError;
 use crate::SelectionError::*;
 

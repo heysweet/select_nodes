@@ -6,29 +6,31 @@ variant access-type {
     public
 }
 
-/// Documentation and Macros don't have fqn
-record graph-node {
+record test-node {
     /// Fully qualified name
     fqn: list<string>
 }
 
-// Has all graph-node fields
-record parsed-node {
+record snapshot-node {
     /// Fully qualified name
-    fqn: list<string>,
-    depends-on: list<string>
+    fqn: list<string>
 }
 
-// Has all parsed-node fields
-record compiled-node {
+record operation-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+record group-node {
+    /// Fully qualified name
+    fqn: list<string>
+}
+
+record seed-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-}
-
-record macro-node {
-    macro-sql: string,
-    depends-on: list<unique-id>,
+    node-config: list<tuple<string, string>>
 }
 
 // Has all graph-node fields
@@ -54,27 +56,59 @@ record model-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
+    node-config: list<tuple<string, string>>,
     access: access-type
 }
 
+// Has all parsed-node fields
+record analysis-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>,
+    node-config: list<tuple<string, string>>
+}
+
+// Has all parsed-node fields
+record rpc-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>,
+    node-config: list<tuple<string, string>>
+}
+
+// Has all parsed-node fields
+record sql-operation-node {
+    /// Fully qualified name
+    fqn: list<string>,
+    depends-on: list<string>,
+    node-config: list<tuple<string, string>>
+}
+
+/// Has no FQN
+record macro-node {
+    macro-sql: string,
+    depends-on: list<unique-id>,
+}
+
+/// Has no FQN
 record doc-node {
     block-contents: string
 }
 
 variant node-type {
     model(model-node),
-    analysis(compiled-node),
-    test(graph-node),
-    snapshot(graph-node),
+    analysis(analysis-node),
+    test(test-node),
+    snapshot(snapshot-node),
     /// Operation, or HookNode
-    operation(graph-node),
-    seed(parsed-node),
-    rpc(compiled-node),
-    sql-operation(compiled-node),
+    operation(operation-node),
+    seed(seed-node),
+    rpc(rpc-node),
+    sql-operation(sql-operation-node),
     source(source-node),
     exposure(exposure-node),
     metric(metric-node),
-    group(graph-node),
+    group(group-node),
     doc(doc-node),
     macro(macro-node),
 }

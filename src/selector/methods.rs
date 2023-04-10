@@ -4,7 +4,7 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 use crate::{
     dbt_node_selector::{NodeType, SelectionError, UniqueId},
     graph::{
-        node::{BaseNode, NodeTypeKey, ParsedExposureNode, ParsedMetricNode, ParsedSourceNode},
+        node::{NodeTypeKey, ParsedExposureNode, ParsedMetricNode, ParsedSourceNode, WrapperNode, WrapperNodeExt},
         parsed_graph::ParsedGraph,
         types::{ManifestNode, SourceDefinition},
     },
@@ -144,7 +144,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    Self::fnmatch(&node.original_file_path, selector).then(|| id.to_string())
+                    Self::fnmatch(&node.original_file_path(), selector).then(|| id.to_string())
                 })
                 .collect::<Vec<String>>()),
 
@@ -152,7 +152,7 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    Self::fnmatch(&node.package_name, selector).then(|| id.to_string())
+                    Self::fnmatch(&node.package_name(), selector).then(|| id.to_string())
                 })
                 .collect::<Vec<String>>()),
 
@@ -207,4 +207,4 @@ impl MethodName {
     }
 }
 
-pub type SelectorTarget = BaseNode;
+pub type SelectorTarget = WrapperNode;

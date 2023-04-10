@@ -114,19 +114,19 @@ mod select_nodes_tests {
             NodeTypeKey::Model => {
                 Ok(NodeType::Model(ModelNode{access: AccessType::Public, depends_on: vec![], fqn: vec![]}))
             },
-            NodeTypeKey::Analysis => Ok(NodeType::Analysis(CompiledNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::Test => Ok(NodeType::Test(GraphNode{fqn: vec![]})),
-            NodeTypeKey::Snapshot => Ok(NodeType::Snapshot(GraphNode{fqn: vec![]})),
-            NodeTypeKey::Operation => Ok(NodeType::Operation(GraphNode{fqn: vec![]})),
-            NodeTypeKey::Seed => Ok(NodeType::Seed(BaseNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::Rpc => Ok(NodeType::Rpc(CompiledNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::SqlOperation => Ok(NodeType::SqlOperation(CompiledNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Analysis => Ok(NodeType::Analysis(AnalysisNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Test => Ok(NodeType::Test(TestNode{fqn: vec![]})),
+            NodeTypeKey::Snapshot => Ok(NodeType::Snapshot(SnapshotNode{fqn: vec![]})),
+            NodeTypeKey::Operation => Ok(NodeType::Operation(OperationNode{fqn: vec![]})),
+            NodeTypeKey::Seed => Ok(NodeType::Seed(SeedNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Rpc => Ok(NodeType::Rpc(RpcNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::SqlOperation => Ok(NodeType::SqlOperation(SqlOperationNode{depends_on: vec![], fqn: vec![]})),
             NodeTypeKey::Doc => Ok(NodeType::Doc(DocNode{block_contents: "".to_string()})),
             NodeTypeKey::Source => Ok(NodeType::Source(SourceNode{fqn: vec![]})),
             NodeTypeKey::Macro => Ok(NodeType::Macro(MacroNode{macro_sql: "".to_string(), depends_on: vec![]})),
             NodeTypeKey::Exposure => Ok(NodeType::Exposure(ExposureNode{fqn: vec![]})),
             NodeTypeKey::Metric => Ok(NodeType::Metric(MetricNode{fqn: vec![]})),
-            NodeTypeKey::Group => Ok(NodeType::Group(GraphNode{fqn: vec![]})),
+            NodeTypeKey::Group => Ok(NodeType::Group(GroupNode{fqn: vec![]})),
         }
     }
 

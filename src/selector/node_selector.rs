@@ -1,6 +1,6 @@
 use wai_bindgen_rust::Handle;
 
-use crate::graph::{node::BaseNode, parsed_graph::ParsedGraph, UniqueId};
+use crate::graph::{node::{WrapperNode, WrapperNodeExt}, parsed_graph::ParsedGraph, UniqueId};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -82,7 +82,7 @@ type DirectNodes = HashSet<UniqueId>;
 type IndirectNodes = HashSet<UniqueId>;
 
 trait NodeMatch {
-    fn node_is_match(&self, node: BaseNode) -> bool;
+    fn node_is_match(&self, node: WrapperNode) -> bool;
 }
 
 trait OtherSelectNodes {
@@ -130,9 +130,9 @@ impl NodeSelector {
         edges: &Vec<Edge>,
         previous_state: Option<Rc<PreviousState>>,
     ) -> Result<Self, SelectorCreateError> {
-        let mut node_map = HashMap::<UniqueId, BaseNode>::new();
+        let mut node_map = HashMap::<UniqueId, WrapperNode>::new();
         for node in nodes.iter() {
-            node_map.insert(node.unique_id.to_owned(), BaseNode::from(node)?);
+            node_map.insert(node.unique_id.to_owned(), WrapperNode::from(node)?);
         }
 
         let mut parent_map = HashMap::<UniqueId, HashSet<UniqueId>>::new();
@@ -252,7 +252,7 @@ impl NodeSelector {
                     let Some(node) = self.graph.node_map.get(unique_id) else {
                         continue;
                     };
-                    if selected.is_superset(&node.depends_on) {
+                    if selected.is_superset(&node.depends_on()) {
                         selected.insert(unique_id.to_string());
                     }
                 }
@@ -265,7 +265,7 @@ impl NodeSelector {
                     let Some(node) = self.graph.node_map.get(unique_id) else {
                         continue;
                     };
-                    if selected_and_parents.is_superset(&node.depends_on) {
+                    if selected_and_parents.is_superset(&node.depends_on()) {
                         selected.insert(unique_id.to_string());
                     }
                 }

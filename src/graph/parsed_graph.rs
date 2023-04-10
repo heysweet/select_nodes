@@ -8,16 +8,16 @@ use crate::dbt_node_selector::SelectionError::*;
 
 pub use String as UniqueId;
 
-use super::node::BaseNode;
 use super::node::NodeTypeKey;
 use super::node::ParsedExposureNode;
 use super::node::ParsedMacroNode;
 use super::node::ParsedMetricNode;
 use super::node::ParsedSourceNode;
+use super::node::WrapperNode;
 
 #[derive(Clone, Debug)]
 pub struct ParsedGraph {
-    pub node_map: HashMap<UniqueId, BaseNode>,
+    pub node_map: HashMap<UniqueId, WrapperNode>,
     pub children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     /// A map of nodes to its set of parents
     pub parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
@@ -34,7 +34,7 @@ impl ParsedGraph {
         mut f: F,
     ) -> HashMap<UniqueId, B>
     where
-        F: FnMut(&BaseNode) -> Option<B>,
+        F: FnMut(&WrapperNode) -> Option<B>,
     {
         subset_ids
             .iter()
@@ -116,18 +116,18 @@ impl ParsedGraph {
     pub fn get_node_if(
         &self,
         node_id: &UniqueId,
-        is_match: &dyn Fn(&BaseNode) -> bool,
-    ) -> Option<&BaseNode> {
+        is_match: &dyn Fn(&WrapperNode) -> bool,
+    ) -> Option<&WrapperNode> {
         let node = self.node_map.get(node_id)?;
         is_match(node).then_some(node)
     }
 
-    pub fn is_node(&self, node_id: &UniqueId, is_match: &dyn Fn(&BaseNode) -> bool) -> bool {
+    pub fn is_node(&self, node_id: &UniqueId, is_match: &dyn Fn(&WrapperNode) -> bool) -> bool {
         self.get_node_if(node_id, is_match).is_some()
     }
 
     fn filter_by_resource_type(
-        included: &HashMap<UniqueId, BaseNode>,
+        included: &HashMap<UniqueId, WrapperNode>,
         resource_type: NodeTypeKey,
     ) -> HashSet<UniqueId> {
         included
@@ -154,7 +154,7 @@ impl ParsedGraph {
     }
 
     fn from(
-        node_map: HashMap<UniqueId, BaseNode>,
+        node_map: HashMap<UniqueId, WrapperNode>,
         children_map: HashMap<UniqueId, HashSet<UniqueId>>,
         parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
@@ -170,7 +170,7 @@ impl ParsedGraph {
     }
 
     pub fn from_children(
-        node_map: HashMap<UniqueId, BaseNode>,
+        node_map: HashMap<UniqueId, WrapperNode>,
         children_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
         let parents_map = Self::reverse_edges(&children_map);
@@ -178,7 +178,7 @@ impl ParsedGraph {
     }
 
     pub fn from_parents(
-        node_map: HashMap<UniqueId, BaseNode>,
+        node_map: HashMap<UniqueId, WrapperNode>,
         parents_map: HashMap<UniqueId, HashSet<UniqueId>>,
     ) -> Self {
         let children_map = Self::reverse_edges(&parents_map);
