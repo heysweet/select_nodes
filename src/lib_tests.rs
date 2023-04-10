@@ -118,7 +118,7 @@ mod select_nodes_tests {
             NodeTypeKey::Test => Ok(NodeType::Test(GraphNode{fqn: vec![]})),
             NodeTypeKey::Snapshot => Ok(NodeType::Snapshot(GraphNode{fqn: vec![]})),
             NodeTypeKey::Operation => Ok(NodeType::Operation(GraphNode{fqn: vec![]})),
-            NodeTypeKey::Seed => Ok(NodeType::Seed(ParsedNode{depends_on: vec![], fqn: vec![]})),
+            NodeTypeKey::Seed => Ok(NodeType::Seed(BaseNode{depends_on: vec![], fqn: vec![]})),
             NodeTypeKey::Rpc => Ok(NodeType::Rpc(CompiledNode{depends_on: vec![], fqn: vec![]})),
             NodeTypeKey::SqlOperation => Ok(NodeType::SqlOperation(CompiledNode{depends_on: vec![], fqn: vec![]})),
             NodeTypeKey::Doc => Ok(NodeType::Doc(DocNode{block_contents: "".to_string()})),

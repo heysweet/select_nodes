@@ -29,7 +29,7 @@ pub enum NodeTypeKey {
     Analysis,
     Test,
     Snapshot,
-    Operation ,
+    Operation,
     Seed,
     Rpc,
     SqlOperation,
@@ -97,7 +97,7 @@ impl NodeTypeKey {
             NodeType::Macro(_) => Self::Macro,
             NodeType::Exposure(_) => Self::Exposure,
             NodeType::Metric(_) => Self::Metric,
-            NodeType::Group(_) => Self::Group,                 
+            NodeType::Group(_) => Self::Group,
         }
     }
 }
@@ -134,19 +134,8 @@ impl NodeType {
 use crate::dbt_node_selector::*;
 
 #[derive(Clone, Debug)]
-/// All nodes or node-like objects in this file should have these properties
-pub struct BaseNodeData {
-    pub unique_id: UniqueId,
-    pub resource_type: NodeType,
-    pub name: String,
-    pub package_name: String,
-    pub path: String,
-    pub original_file_path: String,
-}
-
-#[derive(Clone, Debug)]
 /// Nodes in the DAG
-pub struct ParsedNode {
+pub struct BaseNode {
     pub unique_id: UniqueId,
     pub depends_on: HashSet<UniqueId>,
     pub resource_type: NodeType,
@@ -169,16 +158,16 @@ pub struct ParsedMacroNode {
 }
 
 impl ParsedMacroNode {
-    pub fn from(parsed_node: &ParsedNode) -> Result<Self, SelectorCreateError> {
-        let NodeType::Macro(macro_node) = parsed_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("macro".to_string()))};
+    pub fn from(base_node: &BaseNode) -> Result<Self, SelectorCreateError> {
+        let NodeType::Macro(macro_node) = base_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("macro".to_string()))};
         Ok(Self {
             macro_node,
-            unique_id: parsed_node.unique_id.clone(),
-            depends_on: parsed_node.depends_on.clone(),
-            name: parsed_node.name.clone(),
-            package_name: parsed_node.package_name.clone(),
-            path: parsed_node.path.clone(),
-            original_file_path: parsed_node.original_file_path.clone(),
+            unique_id: base_node.unique_id.clone(),
+            depends_on: base_node.depends_on.clone(),
+            name: base_node.name.clone(),
+            package_name: base_node.package_name.clone(),
+            path: base_node.path.clone(),
+            original_file_path: base_node.original_file_path.clone(),
         })
     }
 }
@@ -196,16 +185,16 @@ pub struct ParsedSourceNode {
 }
 
 impl ParsedSourceNode {
-    pub fn from(parsed_node: &ParsedNode) -> Result<Self, SelectorCreateError> {
-        let NodeType::Source(source_node) = parsed_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("source".to_string()))};
+    pub fn from(base_node: &BaseNode) -> Result<Self, SelectorCreateError> {
+        let NodeType::Source(source_node) = base_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("source".to_string()))};
         Ok(Self {
             source_node,
-            unique_id: parsed_node.unique_id.clone(),
-            depends_on: parsed_node.depends_on.clone(),
-            name: parsed_node.name.clone(),
-            package_name: parsed_node.package_name.clone(),
-            path: parsed_node.path.clone(),
-            original_file_path: parsed_node.original_file_path.clone(),
+            unique_id: base_node.unique_id.clone(),
+            depends_on: base_node.depends_on.clone(),
+            name: base_node.name.clone(),
+            package_name: base_node.package_name.clone(),
+            path: base_node.path.clone(),
+            original_file_path: base_node.original_file_path.clone(),
         })
     }
 }
@@ -222,18 +211,17 @@ pub struct ParsedExposureNode {
     pub original_file_path: String,
 }
 
-
 impl ParsedExposureNode {
-    pub fn from(parsed_node: &ParsedNode) -> Result<Self, SelectorCreateError> {
-        let NodeType::Exposure(exposure_node) = parsed_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("exposure".to_string()))};
+    pub fn from(base_node: &BaseNode) -> Result<Self, SelectorCreateError> {
+        let NodeType::Exposure(exposure_node) = base_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("exposure".to_string()))};
         Ok(Self {
             exposure_node,
-            unique_id: parsed_node.unique_id.clone(),
-            depends_on: parsed_node.depends_on.clone(),
-            name: parsed_node.name.clone(),
-            package_name: parsed_node.package_name.clone(),
-            path: parsed_node.path.clone(),
-            original_file_path: parsed_node.original_file_path.clone(),
+            unique_id: base_node.unique_id.clone(),
+            depends_on: base_node.depends_on.clone(),
+            name: base_node.name.clone(),
+            package_name: base_node.package_name.clone(),
+            path: base_node.path.clone(),
+            original_file_path: base_node.original_file_path.clone(),
         })
     }
 }
@@ -250,31 +238,31 @@ pub struct ParsedMetricNode {
     pub original_file_path: String,
 }
 
-
 impl ParsedMetricNode {
-    pub fn from(parsed_node: &ParsedNode) -> Result<Self, SelectorCreateError> {
-        let NodeType::Metric(metric_node) = parsed_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("metric".to_string()))};
+    pub fn from(base_node: &BaseNode) -> Result<Self, SelectorCreateError> {
+        let NodeType::Metric(metric_node) = base_node.resource_type.clone() else { return Err(SelectorCreateError::NoMatchingResourceType("metric".to_string()))};
         Ok(Self {
             metric_node,
-            unique_id: parsed_node.unique_id.clone(),
-            depends_on: parsed_node.depends_on.clone(),
-            name: parsed_node.name.clone(),
-            package_name: parsed_node.package_name.clone(),
-            path: parsed_node.path.clone(),
-            original_file_path: parsed_node.original_file_path.clone(),
+            unique_id: base_node.unique_id.clone(),
+            depends_on: base_node.depends_on.clone(),
+            name: base_node.name.clone(),
+            package_name: base_node.package_name.clone(),
+            path: base_node.path.clone(),
+            original_file_path: base_node.original_file_path.clone(),
         })
     }
 }
 
 use indexmap::IndexMap;
 
-impl ParsedNode {
+use super::parsed_graph::ParsedGraph;
+
+impl BaseNode {
     pub fn fqn(&self) -> Option<Vec<String>> {
         self.resource_type.fqn()
     }
 
     pub fn from(node: &Node) -> Result<Self, SelectorCreateError> {
-
         Ok(Self {
             unique_id: node.unique_id.to_owned(),
             depends_on: HashSet::from_iter(node.depends_on.iter().map(|s| s.to_string())),
@@ -315,9 +303,13 @@ impl ParsedNode {
             .ok_or_else(|| MissingField(key.to_string()))?
             .to_string())
     }
+
+    pub fn depends_on_macros(&self, graph: &ParsedGraph) -> HashSet<&UniqueId> {
+        self.depends_on.intersection(&graph.macros).collect()
+    }
 }
 
-pub fn generate_node_hash_map(nodes: Vec<ParsedNode>) -> HashMap<UniqueId, ParsedNode> {
+pub fn generate_node_hash_map(nodes: Vec<BaseNode>) -> HashMap<UniqueId, BaseNode> {
     nodes
         .iter()
         .map(|node| (node.unique_id.clone(), node.clone()))

@@ -3,10 +3,18 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
     dbt_node_selector::{NodeType, SelectionError, UniqueId},
-    graph::{parsed_graph::ParsedGraph, node::NodeTypeKey},
+    graph::{
+        node::{BaseNode, NodeTypeKey, ParsedExposureNode, ParsedMetricNode, ParsedSourceNode},
+        parsed_graph::ParsedGraph,
+        types::{ManifestNode, SourceDefinition},
+    },
 };
 
-use super::{state_selector_method::StateSelectorMethod, MethodName, node_selector::{PreviousState, NodeSelector}};
+use super::{
+    node_selector::{NodeSelector, PreviousState},
+    state_selector_method::StateSelectorMethod,
+    MethodName,
+};
 use crate::dbt_node_selector::SelectionError::*;
 
 use MethodName::*;
@@ -83,14 +91,17 @@ impl MethodName {
         }
     }
 
-    /// Some methods (StateSelectorMethod) use prepare in order to update 
+    /// Some methods (StateSelectorMethod) use prepare in order to update
     /// cached state.
-    pub fn prepare(&self, graph: Rc<ParsedGraph>, previous_state: &Option<Rc<PreviousState>>) -> Option<Result<PreviousState, SelectionError>> {
+    pub fn prepare(
+        &self,
+        graph: Rc<ParsedGraph>,
+        previous_state: &Option<Rc<PreviousState>>,
+    ) -> Option<Result<PreviousState, SelectionError>> {
         match self {
             State => Some(StateSelectorMethod::prepare(graph, previous_state)),
-            _ => None
+            _ => None,
         }
-        
     }
 
     pub fn search(
@@ -163,7 +174,8 @@ impl MethodName {
                     Err(_) => Err(NoMatchingResourceType(selector.to_string())),
                     Ok(resource_key) => {
                         let iter = graph.node_map.iter();
-                        let iter = iter.filter(|(_, node)| node.resource_type.key() == resource_key);
+                        let iter =
+                            iter.filter(|(_, node)| node.resource_type.key() == resource_key);
                         let iter = iter.map(|(id, _)| id.clone());
                         Ok(iter.collect())
                     }
@@ -194,3 +206,5 @@ impl MethodName {
         }
     }
 }
+
+pub type SelectorTarget = BaseNode;

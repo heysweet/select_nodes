@@ -26,6 +26,7 @@ variant selection-error {
     incompatible-prefix-and-suffix-error(string),
     failed-regex-match-error(string),
     invalid-method-error(string),
+    invalid-selector(string),
     matched-empty-method-error,
     invalid-indirect-selection-error(string),
     bool-input-error(string),
