@@ -26,12 +26,13 @@ pub struct PreviousState {
     pub graph: Option<Rc<ParsedGraph>>,
     /// modified_macros is a cache of computed macros, which allows for reuse
     /// of prior modified macros computations.
-    pub modified_macros: RefCell<Option<HashSet<UniqueId>>>
+    pub modified_macros: RefCell<Option<HashSet<UniqueId>>>,
 }
 
 impl PreviousState {
     pub fn get_node(&self, unique_id: &UniqueId) -> Option<WrapperNode> {
-        self.graph.as_ref()
+        self.graph
+            .as_ref()
             .and_then(|graph| graph.node_map.get(unique_id))
             .cloned()
     }

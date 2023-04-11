@@ -29,7 +29,10 @@ impl StateSelectorMethod {
         let modified_macros = previous_state.get_modified_macros(&graph)?;
 
         match modified_macros {
-            None => Ok(PreviousState::from_graph_and_macros(previous_graph, HashSet::new())),
+            None => Ok(PreviousState::from_graph_and_macros(
+                previous_graph,
+                HashSet::new(),
+            )),
             Some(macros) => Ok(PreviousState::from_graph_and_macros(graph, macros)),
         }
     }
@@ -114,10 +117,13 @@ impl StateSelectorMethod {
     }
 
     fn check_modified_macros(
-        graph: &ParsedGraph, previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, target: &WrapperNode,
+        graph: &ParsedGraph,
+        previous_state: &Rc<PreviousState>,
+        prev_option: &Option<WrapperNode>,
+        target: &WrapperNode,
     ) -> bool {
         let modified_macros = &previous_state.clone().modified_macros;
-        
+
         // TODO: wasteful clone
         // TODO: Should we take advantage of the RefCell and calculate modified macros here if they don't exist?
         let modified_macros = modified_macros.borrow().clone().unwrap_or(HashSet::new());
@@ -132,8 +138,14 @@ impl StateSelectorMethod {
     ) -> Result<Vec<String>, SelectionError> {
         let graph = graph.clone();
         let checker = match (selector, previous_state.clone()) {
-            ("new", _) => |_graph: &ParsedGraph, _previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, _curr: &WrapperNode| prev_option.is_none(),
-            (_, None) => |_graph: &ParsedGraph, _previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, _curr: &WrapperNode| true,
+            ("new", _) => |_graph: &ParsedGraph,
+                           _previous_state: &Rc<PreviousState>,
+                           prev_option: &Option<WrapperNode>,
+                           _curr: &WrapperNode| prev_option.is_none(),
+            (_, None) => |_graph: &ParsedGraph,
+                          _previous_state: &Rc<PreviousState>,
+                          prev_option: &Option<WrapperNode>,
+                          _curr: &WrapperNode| true,
             ("modified", Some(previous_state)) => unimplemented!(),
             ("modified.body", Some(previous_state)) => unimplemented!(),
             ("modified.configs", Some(previous_state)) => unimplemented!(),
@@ -150,18 +162,16 @@ impl StateSelectorMethod {
         Ok(graph
             .node_map
             .iter()
-            .filter_map(|(unique_id, node)| {
-                match previous_state {
-                    Some(previous_state) => {
-                        let prev_option = previous_state.clone().get_node(&unique_id);
-                        if checker(&graph, &previous_state, &prev_option, &node) {
-                            Some(unique_id.clone())
-                        } else {
-                            None
-                        }
-                    },
-                    None => Some(unique_id.clone())
+            .filter_map(|(unique_id, node)| match previous_state {
+                Some(previous_state) => {
+                    let prev_option = previous_state.clone().get_node(&unique_id);
+                    if checker(&graph, &previous_state, &prev_option, &node) {
+                        Some(unique_id.clone())
+                    } else {
+                        None
+                    }
                 }
+                None => Some(unique_id.clone()),
             })
             .collect())
     }
