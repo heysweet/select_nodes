@@ -128,8 +128,8 @@ impl StateSelectorMethod {
         _included_nodes: &HashSet<UniqueId>,
         selector: &str,
     ) -> Result<Vec<String>, SelectionError> {
-        let checker: &dyn Fn(Option<SelectorTarget>) -> () = match selector {
-            "new" => unimplemented!(),
+        let checker = match selector {
+            "new" => |prev_option: &Option<WrapperNode>, _curr: &WrapperNode| prev_option.is_none(),
             "modified" => unimplemented!(),
             "modified.body" => unimplemented!(),
             "modified.configs" => unimplemented!(),
@@ -142,6 +142,18 @@ impl StateSelectorMethod {
                 selector
             )))?,
         };
-        unimplemented!();
+
+        Ok(graph
+            .node_map
+            .iter()
+            .filter_map(|(unique_id, node)| {
+                let prev_option = previous_state.clone().and_then(|p| p.get_node(&unique_id));
+                if checker(&prev_option, &node) {
+                    Some(unique_id.clone())
+                } else {
+                    None
+                }
+            })
+            .collect())
     }
 }

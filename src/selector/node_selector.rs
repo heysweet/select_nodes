@@ -30,6 +30,12 @@ pub struct PreviousState {
 }
 
 impl PreviousState {
+    pub fn get_node(&self, unique_id: &UniqueId) -> Option<WrapperNode> {
+        self.graph.as_ref()
+            .and_then(|graph| graph.node_map.get(unique_id))
+            .cloned()
+    }
+
     pub fn default() -> Self {
         Self {
             graph: None,

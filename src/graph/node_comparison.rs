@@ -43,7 +43,7 @@ pub trait ParsedNodeExt: ParsedNodePrivate + GraphNodeExt {
     }
 
     fn same_database_representation(&self, other: &Self) -> bool;
-    
+
     fn same_contract(&self, other: &Self) -> bool;
 }
 
@@ -66,7 +66,7 @@ macro_rules! impl_ParsedNodeExt {
                 self.fqn.clone()
             }
         }
-        
+
         impl ParsedNodePrivate for $T {
             fn should_persist_relation_docs(&self) -> bool {
                 todo!()
@@ -86,7 +86,7 @@ macro_rules! impl_CompiledNodeExt {
                 self.fqn.clone()
             }
         }
-        
+
         impl ParsedNodePrivate for $T {
             fn should_persist_relation_docs(&self) -> bool {
                 todo!()
@@ -101,7 +101,7 @@ macro_rules! impl_CompiledNodeExt {
             fn body(&self) -> String {
                 todo!()
             }
-            
+
             fn description(&self) -> String {
                 todo!()
             }
