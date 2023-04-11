@@ -2,22 +2,48 @@ use crate::dbt_node_selector::*;
 
 use super::node::{WrapperNode, WrapperNodeExt};
 
-trait FqnCompareExt {
-    fn same_fqn(&self, other: &Self) -> bool;
-}
-
 pub trait ComparableContents {
     fn same_content(&self, other: &Self) -> bool;
 }
 
 pub trait GraphNodeExt: ComparableContents {
     fn fqn(&self) -> Vec<String>;
+
+    #[inline]
+    fn same_fqn(&self, other: &Self) -> bool {
+        self.fqn() == other.fqn()
+    }
 }
 
-pub trait ParsedNodeExt: GraphNodeExt {
-    fn same_body(&self, other: &Self) -> bool;
-    fn same_persisted_description(&self, other: &Self) -> bool;
+trait ParsedNodePrivate {
+    fn should_persist_relation_docs(&self) -> bool;
+
+    fn should_persist_column_docs(&self) -> bool;
+}
+
+pub trait ParsedNodeExt: ParsedNodePrivate + GraphNodeExt {
+    fn body(&self) -> String;
+    fn description(&self) -> String;
+
+    #[inline]
+    fn same_body(&self, other: &Self) -> bool {
+        self.body() == other.body()
+    }
+
+    #[inline]
+    fn same_persisted_description(&self, other: &Self) -> bool {
+        let relation_docs_persisted = self.should_persist_relation_docs();
+
+        if relation_docs_persisted && self.description() != other.description() {
+            false
+            // TODO: Persisted column docs!
+        } else {
+            true
+        }
+    }
+
     fn same_database_representation(&self, other: &Self) -> bool;
+    
     fn same_contract(&self, other: &Self) -> bool;
 }
 
@@ -40,6 +66,16 @@ macro_rules! impl_ParsedNodeExt {
                 self.fqn.clone()
             }
         }
+        
+        impl ParsedNodePrivate for $T {
+            fn should_persist_relation_docs(&self) -> bool {
+                todo!()
+            }
+
+            fn should_persist_column_docs(&self) -> bool {
+                todo!()
+            }
+        }
     };
 }
 
@@ -50,14 +86,28 @@ macro_rules! impl_CompiledNodeExt {
                 self.fqn.clone()
             }
         }
-
-        impl ParsedNodeExt for $T {
-            fn same_body(&self, other: &Self) -> bool {
-                self.raw_code == other.raw_code
+        
+        impl ParsedNodePrivate for $T {
+            fn should_persist_relation_docs(&self) -> bool {
+                todo!()
             }
 
-            fn same_persisted_description(&self, other: &Self) -> bool {
+            fn should_persist_column_docs(&self) -> bool {
                 todo!()
+            }
+        }
+
+        impl ParsedNodeExt for $T {
+            fn body(&self) -> String {
+                todo!()
+            }
+            
+            fn description(&self) -> String {
+                todo!()
+            }
+
+            fn same_body(&self, other: &Self) -> bool {
+                self.raw_code == other.raw_code
             }
 
             fn same_database_representation(&self, other: &Self) -> bool {
@@ -84,15 +134,19 @@ impl ParsedNodeExt for SeedNode {
         self.same_seed(other)
     }
 
-    fn same_persisted_description(&self, other: &Self) -> bool {
-        todo!()
-    }
-
     fn same_database_representation(&self, other: &Self) -> bool {
         todo!()
     }
 
     fn same_contract(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+    fn body(&self) -> String {
+        todo!()
+    }
+
+    fn description(&self) -> String {
         todo!()
     }
 }
@@ -102,15 +156,19 @@ impl ParsedNodeExt for ModelNode {
         todo!()
     }
 
-    fn same_persisted_description(&self, other: &Self) -> bool {
-        todo!()
-    }
-
     fn same_database_representation(&self, other: &Self) -> bool {
         todo!()
     }
 
     fn same_contract(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+    fn body(&self) -> String {
+        todo!()
+    }
+
+    fn description(&self) -> String {
         todo!()
     }
 }
@@ -139,17 +197,6 @@ impl_CompiledNodeExt!(SqlOperationNode);
 impl ComparableContents for OperationNode {
     fn same_content(&self, other: &Self) -> bool {
         todo!()
-    }
-}
-
-impl<T> FqnCompareExt for T
-where
-    T: GraphNodeExt,
-{
-    fn same_fqn(&self, other: &Self) -> bool {
-        let fqn_a = self.fqn();
-        let fqn_b = other.fqn();
-        &fqn_a.len() == &fqn_b.len() && fqn_a.iter().zip(&fqn_b).all(|(a, b)| a.eq(b))
     }
 }
 
