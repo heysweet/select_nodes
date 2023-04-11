@@ -41,7 +41,6 @@ pub enum NodeTypeKey {
     Group,
 }
 
-
 impl NodeTypeKey {
     pub fn key(&self) -> &str {
         match self {
@@ -200,7 +199,6 @@ impl WrapperNodeExt for WrapperNode {
         self.resource_type.fqn()
     }
 }
-
 
 use indexmap::IndexMap;
 

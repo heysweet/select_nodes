@@ -1,7 +1,7 @@
 use std::{borrow::BorrowMut, collections::HashSet, rc::Rc};
 
 use crate::{
-    dbt_node_selector::{SelectionError, UniqueId, MacroNode, NodeType},
+    dbt_node_selector::{MacroNode, NodeType, SelectionError, UniqueId},
     graph::{node::WrapperNode, parsed_graph::ParsedGraph},
 };
 

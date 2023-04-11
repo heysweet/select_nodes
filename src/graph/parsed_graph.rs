@@ -25,11 +25,7 @@ pub struct ParsedGraph {
 }
 
 impl ParsedGraph {
-    fn get_subset(
-        &self,
-        subset_ids: &HashSet<UniqueId>
-    ) -> HashMap<UniqueId, WrapperNode>
-    {
+    fn get_subset(&self, subset_ids: &HashSet<UniqueId>) -> HashMap<UniqueId, WrapperNode> {
         subset_ids
             .iter()
             .filter_map(|id| {

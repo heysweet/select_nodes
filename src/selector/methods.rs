@@ -4,19 +4,12 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 use crate::{
     dbt_node_selector::{SelectionError, UniqueId},
     graph::{
-        node::{
-            NodeTypeKey, WrapperNode,
-            WrapperNodeExt,
-        },
+        node::{NodeTypeKey, WrapperNode, WrapperNodeExt},
         parsed_graph::ParsedGraph,
     },
 };
 
-use super::{
-    node_selector::PreviousState,
-    state_selector_method::StateSelectorMethod,
-    MethodName,
-};
+use super::{node_selector::PreviousState, state_selector_method::StateSelectorMethod, MethodName};
 use crate::dbt_node_selector::SelectionError::*;
 
 use MethodName::*;
