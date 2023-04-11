@@ -1,8 +1,8 @@
-use std::{collections::HashSet, rc::Rc};
+use std::{borrow::BorrowMut, collections::HashSet, rc::Rc};
 
 use crate::{
-    dbt_node_selector::{SelectionError, UniqueId},
-    graph::{node_comparison::WrapperNodeExt, parsed_graph::ParsedGraph, node::WrapperNode},
+    dbt_node_selector::{SelectionError, UniqueId, MacroNode, NodeType},
+    graph::{node::WrapperNode, parsed_graph::ParsedGraph},
 };
 
 use super::{methods::SelectorTarget, node_selector::PreviousState};
@@ -52,12 +52,8 @@ impl StateSelectorMethod {
 
         let mut modified: Vec<String> = vec![];
         for (uid, new_macro) in new_macros {
-            if let Some(old_macro) = old_macros.get(uid) {
-                if new_macro.macro_node.macro_sql != old_macro.macro_node.macro_sql {
-                    modified.push(uid.to_string());
-                }
-            } else {
-                modified.push(uid.to_string());
+            if !new_macro.same_contents(old_macros.get(uid)) {
+                modified.push(uid.to_string())
             }
         }
 
@@ -70,24 +66,24 @@ impl StateSelectorMethod {
         Ok(modified)
     }
 
-    fn recursively_check_macros_modified(
+    fn recursively_check_macros_modified<'a>(
         graph: &ParsedGraph,
         modified_macros: &HashSet<String>,
         node: &WrapperNode,
-        mut visited_macros: HashSet<UniqueId>,
+        visited_macros: &'a mut HashSet<UniqueId>,
     ) -> bool {
         for uid in node.depends_on_macros(graph) {
-            if (visited_macros.contains(uid)) {
+            if visited_macros.contains(&uid) {
                 continue;
             }
 
-            if (modified_macros.contains(uid)) {
+            if modified_macros.contains(&uid) {
                 return true;
             }
 
             visited_macros.insert(uid.clone());
 
-            let Some(next_macro_node) = graph.node_map.get(uid) else { continue; };
+            let Some(next_macro_node) = graph.node_map.get(&uid) else { continue; };
             let upstream_macros_changed = Self::recursively_check_macros_modified(
                 graph,
                 modified_macros,
@@ -114,17 +110,17 @@ impl StateSelectorMethod {
                 graph,
                 modified_macros,
                 base_node,
-                visited_macros,
+                &mut visited_macros,
             )
         }
     }
 
-    fn make_check_modified_macros(
-        graph: &ParsedGraph,
-        modified_macros: &HashSet<String>,
-    ) -> DiffFn {
-        |_, &target| Self::check_macros_modified(graph, modified_macros, target)
-    }
+    // fn make_check_modified_macros(
+    //     graph: &ParsedGraph,
+    //     modified_macros: &HashSet<String>,
+    // ) -> DiffFn {
+    //     |_, &target| Self::check_macros_modified(graph, modified_macros, target)
+    // }
 
     pub fn search(
         previous_state: &Option<Rc<PreviousState>>,

@@ -2,16 +2,18 @@
 use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
-    dbt_node_selector::{NodeType, SelectionError, UniqueId},
+    dbt_node_selector::{SelectionError, UniqueId},
     graph::{
-        node::{NodeTypeKey, ParsedExposureNode, ParsedMetricNode, ParsedSourceNode, WrapperNode, WrapperNodeExt},
+        node::{
+            NodeTypeKey, WrapperNode,
+            WrapperNodeExt,
+        },
         parsed_graph::ParsedGraph,
-        types::{ManifestNode, SourceDefinition},
     },
 };
 
 use super::{
-    node_selector::{NodeSelector, PreviousState},
+    node_selector::PreviousState,
     state_selector_method::StateSelectorMethod,
     MethodName,
 };
@@ -175,7 +177,7 @@ impl MethodName {
                     Ok(resource_key) => {
                         let iter = graph.node_map.iter();
                         let iter =
-                            iter.filter(|(_, node)| node.resource_type.key() == resource_key);
+                            iter.filter(|(_, node)| node.resource_type().key() == resource_key);
                         let iter = iter.map(|(id, _)| id.clone());
                         Ok(iter.collect())
                     }

@@ -8,17 +8,20 @@ variant access-type {
 
 record test-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
+    raw-code: string
 }
 
 record snapshot-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
+    raw-code: string
 }
 
 record operation-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
+    raw-code: string
 }
 
 record group-node {
@@ -30,19 +33,21 @@ record seed-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    node-config: list<tuple<string, string>>
+    raw-code: string
 }
 
 // Has all graph-node fields
 record source-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
+    raw-code: string
 }
 
 // Has all graph-node fields
 record exposure-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
+    raw-code: string
 }
 
 // Has all graph-node fields
@@ -56,7 +61,7 @@ record model-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    node-config: list<tuple<string, string>>,
+    raw-code: string,
     access: access-type
 }
 
@@ -65,7 +70,7 @@ record analysis-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    node-config: list<tuple<string, string>>
+    raw-code: string
 }
 
 // Has all parsed-node fields
@@ -73,7 +78,7 @@ record rpc-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    node-config: list<tuple<string, string>>
+    raw-code: string
 }
 
 // Has all parsed-node fields
@@ -81,7 +86,7 @@ record sql-operation-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    node-config: list<tuple<string, string>>
+    raw-code: string
 }
 
 /// Has no FQN
@@ -121,4 +126,9 @@ record node {
     path: string,
     original-file-path: string,
     depends-on: list<unique-id>,
+    /// A list of (key, value) configurations. Nested values
+    /// should be keyed as "meta.my_key", and wrapper objects
+    /// should be ignored. All values must be conveted
+    /// to strings
+    config: list<tuple<string, string>>
 }

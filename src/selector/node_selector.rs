@@ -1,6 +1,10 @@
 use wai_bindgen_rust::Handle;
 
-use crate::graph::{node::{WrapperNode, WrapperNodeExt}, parsed_graph::ParsedGraph, UniqueId};
+use crate::graph::{
+    node::{WrapperNode, WrapperNodeExt},
+    parsed_graph::ParsedGraph,
+    UniqueId,
+};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -310,7 +314,7 @@ impl NodeSelector {
         //  core/dbt/contracts/graph/nodes.py
         match self.graph.node_map.get(unique_id) {
             None => Err(SelectionError::NodeNotInGraph(unique_id.to_string())),
-            Some(node) => Ok(resource_type_filter.should_include(&node.resource_type)),
+            Some(node) => Ok(resource_type_filter.should_include(&node.resource_type())),
         }
     }
 
