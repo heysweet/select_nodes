@@ -10,16 +10,14 @@ use crate::SelectionError::*;
 
 pub struct StateSelectorMethod {}
 
-type DiffFn = dyn Fn(Option<SelectorTarget>, SelectorTarget) -> ();
-
 impl StateSelectorMethod {
     pub fn generate_modified_macros(
         graph: &ParsedGraph,
         previous_graph: &ParsedGraph,
-    ) -> Result<Vec<String>, SelectionError> {
+    ) -> Result<HashSet<String>, SelectionError> {
         let mut modified_macros: Vec<String> = vec![];
 
-        Ok(modified_macros)
+        Ok(modified_macros.into_iter().collect())
     }
 
     pub fn prepare(
@@ -31,8 +29,8 @@ impl StateSelectorMethod {
         let modified_macros = previous_state.get_modified_macros(&graph)?;
 
         match modified_macros {
-            None => Ok(PreviousState::from_graph_and_macros(previous_graph, vec![])),
-            Some(macros) => Ok(PreviousState::from_graph_and_macros(graph, macros.to_vec())),
+            None => Ok(PreviousState::from_graph_and_macros(previous_graph, HashSet::new())),
+            Some(macros) => Ok(PreviousState::from_graph_and_macros(graph, macros)),
         }
     }
 
@@ -115,12 +113,16 @@ impl StateSelectorMethod {
         }
     }
 
-    // fn make_check_modified_macros(
-    //     graph: &ParsedGraph,
-    //     modified_macros: &HashSet<String>,
-    // ) -> DiffFn {
-    //     |_, &target| Self::check_macros_modified(graph, modified_macros, target)
-    // }
+    fn check_modified_macros(
+        graph: &ParsedGraph, previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, target: &WrapperNode,
+    ) -> bool {
+        let modified_macros = &previous_state.clone().modified_macros;
+        
+        // TODO: wasteful clone
+        // TODO: Should we take advantage of the RefCell and calculate modified macros here if they don't exist?
+        let modified_macros = modified_macros.borrow().clone().unwrap_or(HashSet::new());
+        Self::check_macros_modified(graph, &modified_macros, &target)
+    }
 
     pub fn search(
         previous_state: &Option<Rc<PreviousState>>,
@@ -128,16 +130,18 @@ impl StateSelectorMethod {
         _included_nodes: &HashSet<UniqueId>,
         selector: &str,
     ) -> Result<Vec<String>, SelectionError> {
-        let checker = match selector {
-            "new" => |prev_option: &Option<WrapperNode>, _curr: &WrapperNode| prev_option.is_none(),
-            "modified" => unimplemented!(),
-            "modified.body" => unimplemented!(),
-            "modified.configs" => unimplemented!(),
-            "modified.persisted_descriptions" => unimplemented!(),
-            "modified.relation" => unimplemented!(),
-            "modified.macros" => unimplemented!(), //Self::make_check_modified_macros(graph.as_ref(), modified_macros),
-            "modified.contract" => unimplemented!(),
-            _ => Err(InvalidSelector(format!(
+        let graph = graph.clone();
+        let checker = match (selector, previous_state.clone()) {
+            ("new", _) => |_graph: &ParsedGraph, _previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, _curr: &WrapperNode| prev_option.is_none(),
+            (_, None) => |_graph: &ParsedGraph, _previous_state: &Rc<PreviousState>, prev_option: &Option<WrapperNode>, _curr: &WrapperNode| true,
+            ("modified", Some(previous_state)) => unimplemented!(),
+            ("modified.body", Some(previous_state)) => unimplemented!(),
+            ("modified.configs", Some(previous_state)) => unimplemented!(),
+            ("modified.persisted_descriptions", Some(previous_state)) => unimplemented!(),
+            ("modified.relation", Some(previous_state)) => unimplemented!(),
+            ("modified.macros", Some(previous_state)) => Self::check_modified_macros,
+            ("modified.contract", Some(previous_state)) => unimplemented!(),
+            (_, _) => Err(InvalidSelector(format!(
                 "Got an invalid macro selector '{}'",
                 selector
             )))?,
@@ -147,11 +151,16 @@ impl StateSelectorMethod {
             .node_map
             .iter()
             .filter_map(|(unique_id, node)| {
-                let prev_option = previous_state.clone().and_then(|p| p.get_node(&unique_id));
-                if checker(&prev_option, &node) {
-                    Some(unique_id.clone())
-                } else {
-                    None
+                match previous_state {
+                    Some(previous_state) => {
+                        let prev_option = previous_state.clone().get_node(&unique_id);
+                        if checker(&graph, &previous_state, &prev_option, &node) {
+                            Some(unique_id.clone())
+                        } else {
+                            None
+                        }
+                    },
+                    None => Some(unique_id.clone())
                 }
             })
             .collect())

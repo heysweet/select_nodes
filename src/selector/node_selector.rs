@@ -26,7 +26,7 @@ pub struct PreviousState {
     pub graph: Option<Rc<ParsedGraph>>,
     /// modified_macros is a cache of computed macros, which allows for reuse
     /// of prior modified macros computations.
-    pub modified_macros: RefCell<Option<Vec<String>>>,
+    pub modified_macros: RefCell<Option<HashSet<UniqueId>>>
 }
 
 impl PreviousState {
@@ -52,23 +52,23 @@ impl PreviousState {
 
     pub fn from_graph_and_macros(
         prev_graph: Rc<ParsedGraph>,
-        modified_macros: Vec<String>,
+        modified_macros: HashSet<UniqueId>,
     ) -> Self {
         Self {
             graph: Some(prev_graph),
-            modified_macros: Some(modified_macros).into(),
+            modified_macros: Some(modified_macros.into_iter().collect()).into(),
         }
     }
 
     pub fn get_modified_macros(
         &self,
         current_graph: &ParsedGraph,
-    ) -> Result<Option<Vec<String>>, SelectionError> {
+    ) -> Result<Option<HashSet<UniqueId>>, SelectionError> {
         let previous_graph = &self.graph;
         let modified_macros = self.modified_macros.borrow();
         let modified_macros = modified_macros.as_ref();
         match (previous_graph, modified_macros) {
-            (_, Some(previous_macros)) => Ok(Some(previous_macros.to_vec())),
+            (_, Some(previous_macros)) => Ok(Some(previous_macros.clone())),
             (None, _) => Err(RequiresPreviousState(
                 "No previous state to generate modified macros.".to_string(),
             )),
