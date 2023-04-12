@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parsed_graph_tests {
-    use crate::{assert_ok, util::test::*, dbt_node_selector::NodeType};
+    use crate::{assert_ok, dbt_node_selector::NodeType, util::test::*};
 
     use super::super::*;
 
@@ -65,14 +65,39 @@ mod parsed_graph_tests {
         // Macro, exposure, metric are just chained by number
         new_node(&mut node_map, &mut parents_map, "macro_1", vec!["origin"]);
         new_node(&mut node_map, &mut parents_map, "macro_2", vec!["macro_1"]);
-        new_node(&mut node_map, &mut parents_map, "exposure_1", vec!["origin"]);
-        new_node(&mut node_map, &mut parents_map, "exposure_2", vec!["exposure_1"]);
+        new_node(
+            &mut node_map,
+            &mut parents_map,
+            "exposure_1",
+            vec!["origin"],
+        );
+        new_node(
+            &mut node_map,
+            &mut parents_map,
+            "exposure_2",
+            vec!["exposure_1"],
+        );
         new_node(&mut node_map, &mut parents_map, "metric_1", vec!["origin"]);
-        new_node(&mut node_map, &mut parents_map, "metric_2", vec!["metric_2"]);
+        new_node(
+            &mut node_map,
+            &mut parents_map,
+            "metric_2",
+            vec!["metric_2"],
+        );
         // We also tag on a macro, metric, and exposure to the end of each of the full words
-        new_node(&mut node_map, &mut parents_map, "macro_howdy", vec!["howdy"]);
+        new_node(
+            &mut node_map,
+            &mut parents_map,
+            "macro_howdy",
+            vec!["howdy"],
+        );
         new_node(&mut node_map, &mut parents_map, "metric_test", vec!["test"]);
-        new_node(&mut node_map, &mut parents_map, "exposure_hello", vec!["hello"]);
+        new_node(
+            &mut node_map,
+            &mut parents_map,
+            "exposure_hello",
+            vec!["hello"],
+        );
         // Create 5 dags of 1 node, no edges, different `NodeType`s
         new_node(&mut node_map, &mut parents_map, "model_floating", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_floating", vec![]);
@@ -300,7 +325,18 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_children(&vec_to_set(vec!["h"]), &None));
         let expected = vec_to_set(vec![
-            "he", "her", "hero", "ho", "how", "howd", "howdy", "hel", "hell", "hello", "exposure_hello", "macro_howdy"
+            "he",
+            "her",
+            "hero",
+            "ho",
+            "how",
+            "howd",
+            "howdy",
+            "hel",
+            "hell",
+            "hello",
+            "exposure_hello",
+            "macro_howdy",
         ]);
 
         assert_eq!(expected, children);
@@ -311,7 +347,8 @@ mod parsed_graph_tests {
         let (node_map, parents_map) = get_test_data();
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
-        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["exposure_hello"]), &None));
+        let children =
+            assert_ok!(graph.select_children(&vec_to_set(vec!["exposure_hello"]), &None));
         let expected: Vec<String> = vec![];
         let expected = vec_to_set(expected);
 
@@ -337,7 +374,8 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["hello"]), &None));
         let expected = vec_to_set(vec![
-            "origin", "h", "he", "hel", "hell", "source_1", "source_2", "source_3", "source_4", "source_5",
+            "origin", "h", "he", "hel", "hell", "source_1", "source_2", "source_3", "source_4",
+            "source_5",
         ]);
 
         assert_eq!(expected, children);
@@ -389,8 +427,18 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["how"])));
         let expected = vec_to_set(vec![
-            "origin", "h", "ho", "how", "howd", "howdy", "source_1", "source_2", "source_3", "source_4",
-            "source_5", "macro_howdy",
+            "origin",
+            "h",
+            "ho",
+            "how",
+            "howd",
+            "howdy",
+            "source_1",
+            "source_2",
+            "source_3",
+            "source_4",
+            "source_5",
+            "macro_howdy",
         ]);
 
         assert_eq!(expected, children);
@@ -405,8 +453,25 @@ mod parsed_graph_tests {
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["h"])));
         // While "t", "te", "tes", "test" are all connected to "origin", they are not ancestors of any children
         let expected = vec_to_set(vec![
-            "origin", "h", "he", "her", "hero", "hel", "hell", "hello", "ho", "how", "howd",
-            "howdy", "source_1", "source_2", "source_3", "source_4", "source_5", "macro_howdy", "exposure_hello"
+            "origin",
+            "h",
+            "he",
+            "her",
+            "hero",
+            "hel",
+            "hell",
+            "hello",
+            "ho",
+            "how",
+            "howd",
+            "howdy",
+            "source_1",
+            "source_2",
+            "source_3",
+            "source_4",
+            "source_5",
+            "macro_howdy",
+            "exposure_hello",
         ]);
 
         assert_eq!(expected, children);
@@ -421,7 +486,7 @@ mod parsed_graph_tests {
 
         assert!(node.is_some());
         let node = node.unwrap();
-        
+
         assert_eq!(node.unique_id(), &"hello".to_string());
     }
 
@@ -484,17 +549,27 @@ mod parsed_graph_tests {
         let num_sources = (&sources).len();
 
         // Confirm that all returned nodes are actually sources
-        let sources: HashSet<UniqueId> = sources.into_iter().filter_map(|(unique_id, node)| {
-            if node.resource_type.key() == NodeTypeKey::Source {
-                Some(unique_id)
-            } else {
-                None
-            }
-        }).collect();
+        let sources: HashSet<UniqueId> = sources
+            .into_iter()
+            .filter_map(|(unique_id, node)| {
+                if node.resource_type.key() == NodeTypeKey::Source {
+                    Some(unique_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(num_sources, (&sources).len());
 
         // Confirm we got all sources
-        let expected = vec_to_set(vec!["source_1", "source_2", "source_3", "source_4", "source_5", "source_floating"]);
+        let expected = vec_to_set(vec![
+            "source_1",
+            "source_2",
+            "source_3",
+            "source_4",
+            "source_5",
+            "source_floating",
+        ]);
         assert_eq!(expected, sources);
     }
 
@@ -507,17 +582,25 @@ mod parsed_graph_tests {
         let num_exposures = (&exposures).len();
 
         // Confirm that all returned nodes are actually sources
-        let exposures: HashSet<UniqueId> = exposures.into_iter().filter_map(|(unique_id, node)| {
-            if node.resource_type.key() == NodeTypeKey::Exposure {
-                Some(unique_id)
-            } else {
-                None
-            }
-        }).collect();
+        let exposures: HashSet<UniqueId> = exposures
+            .into_iter()
+            .filter_map(|(unique_id, node)| {
+                if node.resource_type.key() == NodeTypeKey::Exposure {
+                    Some(unique_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(num_exposures, (&exposures).len());
 
         // Confirm we got all sources
-        let expected = vec_to_set(vec!["exposure_1", "exposure_2", "exposure_hello", "exposure_floating"]);
+        let expected = vec_to_set(vec![
+            "exposure_1",
+            "exposure_2",
+            "exposure_hello",
+            "exposure_floating",
+        ]);
         assert_eq!(expected, exposures);
     }
 
@@ -530,17 +613,25 @@ mod parsed_graph_tests {
         let num_metrics = (&metrics).len();
 
         // Confirm that all returned nodes are actually sources
-        let metrics: HashSet<UniqueId> = metrics.into_iter().filter_map(|(unique_id, node)| {
-            if node.resource_type.key() == NodeTypeKey::Metric {
-                Some(unique_id)
-            } else {
-                None
-            }
-        }).collect();
+        let metrics: HashSet<UniqueId> = metrics
+            .into_iter()
+            .filter_map(|(unique_id, node)| {
+                if node.resource_type.key() == NodeTypeKey::Metric {
+                    Some(unique_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(num_metrics, (&metrics).len());
 
         // Confirm we got all sources
-        let expected = vec_to_set(vec!["metric_1", "metric_2", "metric_test", "metric_floating"]);
+        let expected = vec_to_set(vec![
+            "metric_1",
+            "metric_2",
+            "metric_test",
+            "metric_floating",
+        ]);
         assert_eq!(expected, metrics);
     }
 
@@ -553,13 +644,16 @@ mod parsed_graph_tests {
         let num_macros = (&macros).len();
 
         // Confirm that all returned nodes are actually sources
-        let macros: HashSet<UniqueId> = macros.into_iter().filter_map(|(unique_id, node)| {
-            if node.resource_type.key() == NodeTypeKey::Macro {
-                Some(unique_id)
-            } else {
-                None
-            }
-        }).collect();
+        let macros: HashSet<UniqueId> = macros
+            .into_iter()
+            .filter_map(|(unique_id, node)| {
+                if node.resource_type.key() == NodeTypeKey::Macro {
+                    Some(unique_id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(num_macros, (&macros).len());
 
         // Confirm we got all sources
@@ -572,9 +666,31 @@ mod parsed_graph_tests {
         let (node_map, parents_map) = get_test_data();
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
-        let nodes = graph.get_nodes(&vec_to_set(vec!["hello", "how", "test", "macro_floating", "origin", "b", "a"]));
-        let node_set: HashSet<String> = nodes.into_iter().map(|(unique_id, _node)| unique_id).collect();
+        let nodes = graph.get_nodes(&vec_to_set(vec![
+            "hello",
+            "how",
+            "test",
+            "macro_floating",
+            "origin",
+            "b",
+            "a",
+        ]));
+        let node_set: HashSet<String> = nodes
+            .into_iter()
+            .map(|(unique_id, _node)| unique_id)
+            .collect();
 
-        assert_eq!(node_set, vec_to_set(vec!["hello", "how", "test", "macro_floating", "origin", "b", "a"]));
+        assert_eq!(
+            node_set,
+            vec_to_set(vec![
+                "hello",
+                "how",
+                "test",
+                "macro_floating",
+                "origin",
+                "b",
+                "a"
+            ])
+        );
     }
 }
