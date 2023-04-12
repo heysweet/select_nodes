@@ -355,6 +355,7 @@ mod parsed_graph_tests {
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["h"])));
+        // While "t", "te", "tes", "test" are all connected to "origin", they are not ancestors of any children
         let expected = vec_to_set(vec![
             "origin", "h", "he", "her", "hero", "hel", "hell", "hello", "ho", "how", "howd",
             "howdy", "source_1", "source_2", "source_3", "source_4", "source_5",
