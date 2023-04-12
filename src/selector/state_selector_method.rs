@@ -119,15 +119,15 @@ impl StateSelectorMethod {
     fn check_modified_macros(
         graph: &ParsedGraph,
         previous_state: &Rc<PreviousState>,
-        prev_option: &Option<WrapperNode>,
-        target: &WrapperNode,
+        unique_id: &UniqueId,
     ) -> bool {
+        let Some(node) = graph.node_map.get(unique_id) else { return false };
         let modified_macros = &previous_state.clone().modified_macros;
 
         // TODO: wasteful clone
         // TODO: Should we take advantage of the RefCell and calculate modified macros here if they don't exist?
         let modified_macros = modified_macros.borrow().clone().unwrap_or(HashSet::new());
-        Self::check_macros_modified(graph, &modified_macros, &target)
+        Self::check_macros_modified(graph, &modified_macros, &node)
     }
 
     pub fn search(
@@ -139,13 +139,11 @@ impl StateSelectorMethod {
         let graph = graph.clone();
         let checker = match (selector, previous_state.clone()) {
             ("new", _) => |_graph: &ParsedGraph,
-                           _previous_state: &Rc<PreviousState>,
-                           prev_option: &Option<WrapperNode>,
-                           _curr: &WrapperNode| prev_option.is_none(),
+                           previous_state: &Rc<PreviousState>,
+                           unique_id: &UniqueId| previous_state.get_node(unique_id).is_none(),
             (_, None) => |_graph: &ParsedGraph,
                           _previous_state: &Rc<PreviousState>,
-                          prev_option: &Option<WrapperNode>,
-                          _curr: &WrapperNode| true,
+                          _unique_id: &UniqueId| true,
             ("modified", Some(previous_state)) => unimplemented!(),
             ("modified.body", Some(previous_state)) => unimplemented!(),
             ("modified.configs", Some(previous_state)) => unimplemented!(),
@@ -161,11 +159,10 @@ impl StateSelectorMethod {
 
         Ok(graph
             .node_map
-            .iter()
-            .filter_map(|(unique_id, node)| match previous_state {
+            .keys()
+            .filter_map(|unique_id| match previous_state {
                 Some(previous_state) => {
-                    let prev_option = previous_state.clone().get_node(&unique_id);
-                    if checker(&graph, &previous_state, &prev_option, &node) {
+                    if checker(&graph, &previous_state, &unique_id) {
                         Some(unique_id.clone())
                     } else {
                         None
