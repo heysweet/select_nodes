@@ -137,8 +137,8 @@ impl OtherSelectNodes for NodeSelector {
 
 impl NodeSelector {
     pub fn from(
-        nodes: &Vec<Node>,
-        edges: &Vec<Edge>,
+        nodes: Vec<Node>,
+        edges: Vec<Edge>,
         previous_state: Option<Rc<PreviousState>>,
     ) -> Result<Self, SelectorCreateError> {
         let mut node_map = HashMap::<UniqueId, WrapperNode>::new();
@@ -482,7 +482,7 @@ impl NodeSelector {
 
 impl NodeSelector {
     pub fn _new(nodes: Vec<Node>, edges: Vec<Edge>) -> Result<Handle<Self>, SelectorCreateError> {
-        NodeSelector::from(&nodes, &edges, None).and_then(|s| Ok(s.into()))
+        NodeSelector::from(nodes, edges, None).and_then(|s| Ok(s.into()))
     }
 
     pub fn _update(
@@ -491,7 +491,7 @@ impl NodeSelector {
         edges: Vec<Edge>,
     ) -> Result<Handle<Self>, SelectorCreateError> {
         let previous_state = PreviousState::from_graph(self.graph.clone());
-        NodeSelector::from(&nodes, &edges, Some(Rc::new(previous_state))).and_then(|s| Ok(s.into()))
+        NodeSelector::from(nodes, edges, Some(Rc::new(previous_state))).and_then(|s| Ok(s.into()))
     }
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
