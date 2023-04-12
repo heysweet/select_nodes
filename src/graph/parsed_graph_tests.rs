@@ -52,6 +52,11 @@ mod parsed_graph_tests {
         let mut parents_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::default();
 
         new_node(&mut node_map, &mut parents_map, "origin", vec![]);
+
+        // create a small DAG of 1 edge, 2 nodes
+        new_node(&mut node_map, &mut parents_map, "a", vec![]);
+        new_node(&mut node_map, &mut parents_map, "b", vec!["a"]);
+
         new_node(&mut node_map, &mut parents_map, "source_1", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_2", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_3", vec![]);
@@ -68,6 +73,7 @@ mod parsed_graph_tests {
         new_node(&mut node_map, &mut parents_map, "macro_howdy", vec!["howdy"]);
         new_node(&mut node_map, &mut parents_map, "metric_test", vec!["test"]);
         new_node(&mut node_map, &mut parents_map, "exposure_hello", vec!["hello"]);
+        // Create 5 dags of 1 node, no edges, different `NodeType`s
         new_node(&mut node_map, &mut parents_map, "model_floating", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_floating", vec![]);
         new_node(&mut node_map, &mut parents_map, "macro_floating", vec![]);
