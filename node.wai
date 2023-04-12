@@ -3,57 +3,57 @@ type unique-id = string
 variant access-type {
     protected,
     private,
-    public
+    public,
 }
 
 record test-node {
     /// Fully qualified name
     fqn: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 record snapshot-node {
     /// Fully qualified name
     fqn: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 record operation-node {
     /// Fully qualified name
     fqn: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 record group-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
 }
 
 record seed-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 // Has all graph-node fields
 record source-node {
     /// Fully qualified name
     fqn: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 // Has all graph-node fields
 record exposure-node {
     /// Fully qualified name
     fqn: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 // Has all graph-node fields
 record metric-node {
     /// Fully qualified name
-    fqn: list<string>
+    fqn: list<string>,
 }
 
 // Has all compiled-node fields
@@ -62,7 +62,7 @@ record model-node {
     fqn: list<string>,
     depends-on: list<string>,
     raw-code: string,
-    access: access-type
+    access: access-type,
 }
 
 // Has all parsed-node fields
@@ -70,7 +70,7 @@ record analysis-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 // Has all parsed-node fields
@@ -78,7 +78,7 @@ record rpc-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 // Has all parsed-node fields
@@ -86,7 +86,7 @@ record sql-operation-node {
     /// Fully qualified name
     fqn: list<string>,
     depends-on: list<string>,
-    raw-code: string
+    raw-code: string,
 }
 
 /// Has no FQN
@@ -97,7 +97,7 @@ record macro-node {
 
 /// Has no FQN
 record doc-node {
-    block-contents: string
+    block-contents: string,
 }
 
 variant node-type {
@@ -131,5 +131,5 @@ record node {
     /// should be ignored. All values must be conveted
     /// to strings
     config: list<tuple<string, string>>,
-    tags: list<string>
+    tags: list<string>,
 }
