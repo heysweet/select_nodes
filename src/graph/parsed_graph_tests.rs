@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parsed_graph_tests {
-    use crate::{assert_ok, util::test::*};
+    use crate::{assert_ok, util::test::*, dbt_node_selector::NodeType};
 
     use super::super::*;
 
@@ -37,12 +37,12 @@ mod parsed_graph_tests {
     ///
     /// Each prefix of these words (h, he, hel, hell, hello) is its own node.
     ///
-    /// Each node also has a `seed_n` as a parent, where `n` is the length of the prefix
+    /// Each node also has a `source_n` as a parent, where `n` is the length of the prefix
     ///
-    /// All non-seed nodes also have `origin` as a parent.
+    /// All non-source nodes also have `origin` as a parent.
     ///
     /// Node type is `model` by default, but if the `UniqueId` starts with another
-    /// node type followed by an "_" (seed_, source_, exposure_, metric_, macro_),
+    /// node type followed by an "_" (source_, exposure_, metric_, macro_),
     /// then we will use that NodeType.
     fn get_test_data() -> (
         HashMap<UniqueId, WrapperNode>,
@@ -52,100 +52,100 @@ mod parsed_graph_tests {
         let mut parents_map: HashMap<UniqueId, HashSet<UniqueId>> = HashMap::default();
 
         new_node(&mut node_map, &mut parents_map, "origin", vec![]);
-        new_node(&mut node_map, &mut parents_map, "seed_1", vec![]);
-        new_node(&mut node_map, &mut parents_map, "seed_2", vec![]);
-        new_node(&mut node_map, &mut parents_map, "seed_3", vec![]);
-        new_node(&mut node_map, &mut parents_map, "seed_4", vec![]);
-        new_node(&mut node_map, &mut parents_map, "seed_5", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_1", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_2", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_3", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_4", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_5", vec![]);
         new_node(
             &mut node_map,
             &mut parents_map,
             "h",
-            vec!["seed_1", "origin"],
+            vec!["source_1", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "he",
-            vec!["h", "seed_2", "origin"],
+            vec!["h", "source_2", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "hel",
-            vec!["he", "seed_3", "origin"],
+            vec!["he", "source_3", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "hell",
-            vec!["hel", "seed_4", "origin"],
+            vec!["hel", "source_4", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "hello",
-            vec!["hell", "seed_5", "origin"],
+            vec!["hell", "source_5", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "ho",
-            vec!["h", "seed_2", "origin"],
+            vec!["h", "source_2", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "how",
-            vec!["ho", "seed_3", "origin"],
+            vec!["ho", "source_3", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "howd",
-            vec!["how", "seed_4", "origin"],
+            vec!["how", "source_4", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "howdy",
-            vec!["howd", "seed_5", "origin"],
+            vec!["howd", "source_5", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "her",
-            vec!["he", "seed_3", "origin"],
+            vec!["he", "source_3", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "hero",
-            vec!["her", "seed_4", "origin"],
+            vec!["her", "source_4", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "t",
-            vec!["seed_1", "origin"],
+            vec!["source_1", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "te",
-            vec!["t", "seed_2", "origin"],
+            vec!["t", "source_2", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "tes",
-            vec!["te", "seed_3", "origin"],
+            vec!["te", "source_3", "origin"],
         );
         new_node(
             &mut node_map,
             &mut parents_map,
             "test",
-            vec!["tes", "seed_4", "origin"],
+            vec!["tes", "source_4", "origin"],
         );
 
         (node_map, parents_map)
@@ -160,7 +160,7 @@ mod parsed_graph_tests {
         let parents = graph.parents_map.get("he").expect("Got no parents");
 
         assert_eq!(children, &vec_to_set(vec!["her", "hel"]));
-        assert_eq!(parents, &vec_to_set(vec!["h", "seed_2", "origin"]));
+        assert_eq!(parents, &vec_to_set(vec!["h", "source_2", "origin"]));
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod parsed_graph_tests {
         let parents = graph.parents_map.get("he").expect("Got no parents");
 
         assert_eq!(parents, &vec_to_set(vec!["her", "hel"]));
-        assert_eq!(children, &vec_to_set(vec!["h", "seed_2", "origin"]));
+        assert_eq!(children, &vec_to_set(vec!["h", "source_2", "origin"]));
     }
 
     #[test]
@@ -229,7 +229,7 @@ mod parsed_graph_tests {
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
         let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["he"]), &Some(1)));
-        let expected = vec_to_set(vec!["h", "seed_2", "origin"]);
+        let expected = vec_to_set(vec!["h", "source_2", "origin"]);
 
         assert_eq!(expected, children);
     }
@@ -240,7 +240,7 @@ mod parsed_graph_tests {
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
         let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["he"]), &Some(2)));
-        let expected = vec_to_set(vec!["h", "seed_2", "origin", "seed_1"]);
+        let expected = vec_to_set(vec!["h", "source_2", "origin", "source_1"]);
 
         assert_eq!(expected, children);
     }
@@ -289,7 +289,7 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["hello"]), &None));
         let expected = vec_to_set(vec![
-            "origin", "h", "he", "hel", "hell", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+            "origin", "h", "he", "hel", "hell", "source_1", "source_2", "source_3", "source_4", "source_5",
         ]);
 
         assert_eq!(expected, children);
@@ -314,7 +314,7 @@ mod parsed_graph_tests {
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
         let children = assert_ok!(graph.and_select_parents(&vec_to_set(vec!["howd"]), &Some(1)));
-        let expected = vec_to_set(vec!["howd", "how", "seed_4", "origin"]);
+        let expected = vec_to_set(vec!["howd", "how", "source_4", "origin"]);
 
         assert_eq!(expected, children);
     }
@@ -327,7 +327,7 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.and_select_parents(&vec_to_set(vec!["how"]), &None));
         let expected = vec_to_set(vec![
-            "how", "ho", "h", "origin", "seed_3", "seed_2", "seed_1",
+            "how", "ho", "h", "origin", "source_3", "source_2", "source_1",
         ]);
 
         assert_eq!(expected, children);
@@ -341,8 +341,8 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["how"])));
         let expected = vec_to_set(vec![
-            "origin", "h", "ho", "how", "howd", "howdy", "seed_1", "seed_2", "seed_3", "seed_4",
-            "seed_5",
+            "origin", "h", "ho", "how", "howd", "howdy", "source_1", "source_2", "source_3", "source_4",
+            "source_5",
         ]);
 
         assert_eq!(expected, children);
@@ -357,9 +357,95 @@ mod parsed_graph_tests {
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["h"])));
         let expected = vec_to_set(vec![
             "origin", "h", "he", "her", "hero", "hel", "hell", "hello", "ho", "how", "howd",
-            "howdy", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+            "howdy", "source_1", "source_2", "source_3", "source_4", "source_5",
         ]);
 
         assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn get_node_if_true() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let node = graph.get_node_if(&"hello".to_string(), &|_| true);
+
+        assert!(node.is_some());
+        let node = node.unwrap();
+        
+        assert_eq!(node.unique_id(), &"hello".to_string());
+    }
+
+    #[test]
+    fn get_node_if_true_does_not_exist() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let node = graph.get_node_if(&"does_not_exist".to_string(), &|_| true);
+
+        assert!(node.is_none());
+    }
+
+    #[test]
+    fn get_node_if_false() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let node = graph.get_node_if(&"hello".to_string(), &|_| false);
+
+        assert!(node.is_none());
+    }
+
+    #[test]
+    fn is_node_true() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let is_node = graph.is_node(&"hello".to_string(), &|_| true);
+
+        assert!(is_node);
+    }
+
+    #[test]
+    fn is_node_true_does_not_exist() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let is_node = graph.is_node(&"does_not_exist".to_string(), &|_| true);
+
+        assert!(!is_node);
+    }
+
+    #[test]
+    fn is_node_false() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let is_node = graph.is_node(&"hello".to_string(), &|_| false);
+
+        assert!(!is_node);
+    }
+
+    #[test]
+    fn get_sources() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let sources = graph.get_sources();
+        let num_sources = (&sources).len();
+
+        // Confirm that all returned nodes are actually sources
+        let sources: HashSet<UniqueId> = sources.into_iter().filter_map(|(unique_id, node)| {
+            if node.resource_type.key() == NodeTypeKey::Source {
+                Some(unique_id)
+            } else {
+                None
+            }
+        }).collect();
+        assert_eq!(num_sources, (&sources).len());
+
+        // Confirm we got all sources
+        let expected = vec_to_set(vec!["source_1", "source_2", "source_3", "source_4", "source_5"]);
+        assert_eq!(expected, sources);
     }
 }

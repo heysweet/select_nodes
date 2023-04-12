@@ -93,7 +93,7 @@ impl ParsedGraph {
         self.get_node_if(node_id, is_match).is_some()
     }
 
-    fn filter_by_resource_type(
+    pub fn filter_by_resource_type(
         included: &HashMap<UniqueId, WrapperNode>,
         resource_type: NodeTypeKey,
     ) -> HashSet<UniqueId> {
