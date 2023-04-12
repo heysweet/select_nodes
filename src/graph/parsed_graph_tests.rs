@@ -566,4 +566,15 @@ mod parsed_graph_tests {
         let expected = vec_to_set(vec!["macro_1", "macro_2", "macro_howdy", "macro_floating"]);
         assert_eq!(expected, macros);
     }
+
+    #[test]
+    fn get_nodes() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let nodes = graph.get_nodes(&vec_to_set(vec!["hello", "how", "test", "macro_floating", "origin", "b", "a"]));
+        let node_set: HashSet<String> = nodes.into_iter().map(|(unique_id, _node)| unique_id).collect();
+
+        assert_eq!(node_set, vec_to_set(vec!["hello", "how", "test", "macro_floating", "origin", "b", "a"]));
+    }
 }

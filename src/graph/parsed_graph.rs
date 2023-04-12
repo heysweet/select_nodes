@@ -30,7 +30,8 @@ pub struct ParsedGraph {
 
 /// Currently, we do not cycle detection and assume all inputs are Directed Acyclic Graphs (DAGs)
 impl ParsedGraph {
-    fn get_subset(&self, subset_ids: &HashSet<UniqueId>) -> HashMap<UniqueId, WrapperNode> {
+    /// Retrieves the nodes for a subset of IDs
+    pub fn get_nodes(&self, subset_ids: &HashSet<UniqueId>) -> HashMap<UniqueId, WrapperNode> {
         subset_ids
             .iter()
             .filter_map(|id| {
@@ -42,19 +43,19 @@ impl ParsedGraph {
     }
 
     pub fn get_sources(&self) -> HashMap<UniqueId, WrapperNode> {
-        self.get_subset(&self.sources)
+        self.get_nodes(&self.sources)
     }
 
     pub fn get_exposures(&self) -> HashMap<UniqueId, WrapperNode> {
-        self.get_subset(&self.exposures)
+        self.get_nodes(&self.exposures)
     }
 
     pub fn get_metrics(&self) -> HashMap<UniqueId, WrapperNode> {
-        self.get_subset(&self.metrics)
+        self.get_nodes(&self.metrics)
     }
 
     pub fn get_macros(&self) -> HashMap<UniqueId, WrapperNode> {
-        self.get_subset(&self.macros)
+        self.get_nodes(&self.macros)
     }
 
     fn reverse_edges(
