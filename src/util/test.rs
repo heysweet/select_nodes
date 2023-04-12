@@ -7,6 +7,26 @@ pub fn vec_to_set(vec: Vec<impl Into<String>>) -> HashSet<String> {
     vec.into_iter().map(|s| s.into()).collect()
 }
 
+#[macro_export]
+macro_rules! assert_ok {
+    ($expression:expr) => {
+        match $expression {
+            Ok(result) => result,
+            _ => panic!("expected `Ok` but got `Err`"),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! assert_err {
+    ($expression:expr, $($pattern:tt)+) => {
+        match $expression {
+            $($pattern)+ => (),
+            ref e => panic!("expected `{}` but got `{:?}`", stringify!($($pattern)+), e),
+        }
+    }
+}
+
 /// Asserts option is Some and returns HashSet<String>
 pub fn assert_vec_to_set(vec: Option<Vec<impl Into<String>>>) -> HashSet<String> {
     assert!(vec.is_some());

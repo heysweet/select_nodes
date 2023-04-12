@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod parsed_graph_tests {
-    use crate::util::test::*;
+    use crate::{assert_ok, util::test::*};
 
     use super::super::*;
 
@@ -175,5 +175,190 @@ mod parsed_graph_tests {
 
         assert_eq!(parents, &vec_to_set(vec!["her", "hel"]));
         assert_eq!(children, &vec_to_set(vec!["h", "seed_2", "origin"]));
+    }
+
+    #[test]
+    fn select_children_zero() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["he"]), &Some(0)));
+        let expected: Vec<String> = vec![];
+        let expected = vec_to_set(expected);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_children_one() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["he"]), &Some(1)));
+        let expected = vec_to_set(vec!["her", "hel"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_children_two() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["he"]), &Some(2)));
+        let expected = vec_to_set(vec!["her", "hel", "hero", "hell"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_parents_zero() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["he"]), &Some(0)));
+        let expected: Vec<String> = vec![];
+        let expected = vec_to_set(expected);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_parents_one() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["he"]), &Some(1)));
+        let expected = vec_to_set(vec!["h", "seed_2", "origin"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_parents_two() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["he"]), &Some(2)));
+        let expected = vec_to_set(vec!["h", "seed_2", "origin", "seed_1"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_children_none() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["h"]), &None));
+        let expected = vec_to_set(vec![
+            "he", "her", "hero", "ho", "how", "howd", "howdy", "hel", "hell", "hello",
+        ]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_children_no_children() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["hello"]), &None));
+        let expected: Vec<String> = vec![];
+        let expected = vec_to_set(expected);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_parents_no_parents() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["origin"]), &None));
+        let expected: Vec<String> = vec![];
+        let expected = vec_to_set(expected);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_parents_none() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_parents(&vec_to_set(vec!["hello"]), &None));
+        let expected = vec_to_set(vec![
+            "origin", "h", "he", "hel", "hell", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+        ]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn and_select_parents_zero() {
+        // Should select the included set and 0 parents
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.and_select_parents(&vec_to_set(vec!["howd"]), &Some(0)));
+        let expected = vec_to_set(vec!["howd"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn and_select_parents_one() {
+        // Should select the included set and 1 depth of parents
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.and_select_parents(&vec_to_set(vec!["howd"]), &Some(1)));
+        let expected = vec_to_set(vec!["howd", "how", "seed_4", "origin"]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn and_select_parents_none() {
+        // Should select the included set and all parents
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.and_select_parents(&vec_to_set(vec!["how"]), &None));
+        let expected = vec_to_set(vec![
+            "how", "ho", "h", "origin", "seed_3", "seed_2", "seed_1",
+        ]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_childrens_parents_simple() {
+        // Should select the included set and all parents
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["how"])));
+        let expected = vec_to_set(vec![
+            "origin", "h", "ho", "how", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+        ]);
+
+        assert_eq!(expected, children);
+    }
+
+    #[test]
+    fn select_childrens_parents_complex() {
+        // Should select the included set and all parents
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["h"])));
+        let expected = vec_to_set(vec![
+            "origin", "h", "he", "her", "hero", "hel", "hell", "hello", "ho", "how", "howd",
+            "howdy", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+        ]);
+
+        assert_eq!(expected, children);
     }
 }

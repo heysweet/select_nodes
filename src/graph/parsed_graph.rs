@@ -28,6 +28,7 @@ pub struct ParsedGraph {
     pub macros: HashSet<UniqueId>,
 }
 
+/// Currently, we do not cycle detection and assume all inputs are Directed Acyclic Graphs (DAGs)
 impl ParsedGraph {
     fn get_subset(&self, subset_ids: &HashSet<UniqueId>) -> HashMap<UniqueId, WrapperNode> {
         subset_ids
@@ -266,6 +267,6 @@ impl ParsedGraph {
     ) -> Result<HashSet<UniqueId>, SelectionError> {
         let mut ancestors_for = self.select_children(selected, &None)?;
         ancestors_for.extend(ancestors_for.clone().into_iter());
-        self.select_parents(&mut ancestors_for, &None)
+        self.and_select_parents(&mut ancestors_for, &None)
     }
 }
