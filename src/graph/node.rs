@@ -227,8 +227,8 @@ impl WrapperNode {
                 package_name: node.package_name.to_owned(),
                 path: node.path.to_owned(),
                 original_file_path: node.original_file_path.to_owned(),
-                config: node.config.into_iter().collect(),
-                tags: node.tags.into_iter().map(|tag| tag.to_lowercase()).collect(),
+                config: node.config.to_owned().into_iter().collect(),
+                tags: node.tags.to_owned().into_iter().map(|tag| tag.to_lowercase()).collect(),
             },
             resource_type: node.node_type.to_owned(),
         })
