@@ -257,7 +257,7 @@ impl WrapperNode {
         tags: Vec<String>,
         config: Vec<(String, String)>,
     ) -> Result<Self, SelectorCreateError> {
-        Ok(Self::from(&Node { 
+        Ok(Self::from(&Node {
             unique_id: unique_id.into(),
             depends_on: depends_on,
             name: name.into(),
@@ -266,7 +266,7 @@ impl WrapperNode {
             original_file_path: original_file_path.into(),
             config: config,
             node_type: resource_type,
-            tags
+            tags,
         })?)
     }
 
