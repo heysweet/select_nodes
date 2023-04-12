@@ -138,9 +138,11 @@ impl StateSelectorMethod {
     ) -> Result<Vec<String>, SelectionError> {
         let graph = graph.clone();
         let checker = match (selector, previous_state.clone()) {
-            ("new", _) => |_graph: &ParsedGraph,
-                           previous_state: &Rc<PreviousState>,
-                           unique_id: &UniqueId| previous_state.get_node(unique_id).is_none(),
+            ("new", _) => {
+                |_graph: &ParsedGraph, previous_state: &Rc<PreviousState>, unique_id: &UniqueId| {
+                    previous_state.get_node(unique_id).is_none()
+                }
+            }
             (_, None) => |_graph: &ParsedGraph,
                           _previous_state: &Rc<PreviousState>,
                           _unique_id: &UniqueId| true,
