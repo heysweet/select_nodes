@@ -341,7 +341,8 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["how"])));
         let expected = vec_to_set(vec![
-            "origin", "h", "ho", "how", "howd", "howdy", "seed_1", "seed_2", "seed_3", "seed_4", "seed_5",
+            "origin", "h", "ho", "how", "howd", "howdy", "seed_1", "seed_2", "seed_3", "seed_4",
+            "seed_5",
         ]);
 
         assert_eq!(expected, children);
