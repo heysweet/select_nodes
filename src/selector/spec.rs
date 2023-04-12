@@ -394,9 +394,9 @@ impl SelectionCriteria {
 #[derive(Clone, Debug)]
 pub enum SelectionSpec {
     SelectionCriteria(SelectionCriteria),
-    SelectionIntersection,
-    SelectionDifference,
-    SelectionUnion,
+    SelectionIntersection(Vec<SelectionCriteria>),
+    SelectionDifference(Vec<SelectionCriteria>),
+    SelectionUnion(Vec<SelectionCriteria>),
 }
 
 #[derive(Clone, Debug)]
@@ -459,15 +459,23 @@ impl SelectionSpec {
         let iter = selections[0].iter();
 
         match self {
-            SelectionIntersection => {
+            SelectionIntersection(selection_criteria) => {
                 let combination = iter.filter(|&id| hash_sets.all(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionDifference => {
+            SelectionDifference(selection_criteria) => {
                 let combination = iter.filter(|&id| !hash_sets.any(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionUnion | SelectionSpec::SelectionCriteria(_) => {
+            SelectionSpec::SelectionCriteria(selection_critierion) => {
+                let mut combination = HashSet::clone(first.unwrap());
+
+                for item in hash_sets {
+                    combination.extend(item.to_owned());
+                }
+                combination
+            }
+            SelectionUnion(selection_criteria) => {
                 let mut combination = HashSet::clone(first.unwrap());
 
                 for item in hash_sets {
