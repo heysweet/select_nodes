@@ -142,6 +142,7 @@ pub struct CommonNodeData {
     pub path: String,
     pub original_file_path: String,
     pub config: HashMap<String, String>,
+    pub tags: HashSet<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -159,10 +160,12 @@ pub trait WrapperNodeExt {
     fn path(&self) -> &String;
     fn original_file_path(&self) -> &String;
     fn config(&self) -> &HashMap<String, String>;
-    fn same_content(&self, other: &Self) -> bool;
+    fn tags(&self) -> &HashSet<String>;
+    fn has_tag(&self, tag: &String) -> bool;
     fn resource_type(&self) -> &NodeType;
 
     fn fqn(&self) -> Option<Vec<String>>;
+    fn same_content(&self, other: &Self) -> bool;
 }
 
 impl WrapperNodeExt for WrapperNode {
@@ -187,16 +190,22 @@ impl WrapperNodeExt for WrapperNode {
     fn config(&self) -> &HashMap<String, String> {
         &self.common.config
     }
+    fn tags(&self) -> &HashSet<UniqueId> {
+        &self.common.tags
+    }
+    fn has_tag(&self, tag: &String) -> bool {
+        self.common.tags.contains(tag)
+    }
     fn resource_type(&self) -> &NodeType {
         &self.resource_type
     }
 
-    fn same_content(&self, other: &Self) -> bool {
-        self.resource_type.same_content(&other.resource_type)
-    }
-
     fn fqn(&self) -> Option<Vec<UniqueId>> {
         self.resource_type.fqn()
+    }
+
+    fn same_content(&self, other: &Self) -> bool {
+        self.resource_type.same_content(&other.resource_type)
     }
 }
 
@@ -218,9 +227,10 @@ impl WrapperNode {
                 package_name: node.package_name.to_owned(),
                 path: node.path.to_owned(),
                 original_file_path: node.original_file_path.to_owned(),
-                config: node.config.clone().into_iter().collect(),
+                config: node.config.into_iter().collect(),
+                tags: node.tags.into_iter().map(|tag| tag.to_lowercase()).collect(),
             },
-            resource_type: node.node_type.clone(),
+            resource_type: node.node_type.to_owned(),
         })
     }
 
@@ -232,6 +242,7 @@ impl WrapperNode {
         path: impl Into<String>,
         original_file_path: impl Into<String>,
         resource_type: NodeType,
+        tags: Vec<String>,
         config: Vec<(String, String)>,
     ) -> Result<Self, SelectorCreateError> {
         Ok(Self {
@@ -243,6 +254,7 @@ impl WrapperNode {
                 path: path.into(),
                 original_file_path: original_file_path.into(),
                 config: config.into_iter().collect(),
+                tags: tags.into_iter().map(|tag| tag.to_lowercase()).collect(),
             },
             resource_type,
         })

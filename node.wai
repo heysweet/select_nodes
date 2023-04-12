@@ -130,5 +130,6 @@ record node {
     /// should be keyed as "meta.my_key", and wrapper objects
     /// should be ignored. All values must be conveted
     /// to strings
-    config: list<tuple<string, string>>
+    config: list<tuple<string, string>>,
+    tags: list<string>
 }

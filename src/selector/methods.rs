@@ -104,7 +104,12 @@ impl MethodName {
                 .collect::<Vec<String>>()),
 
             Tag => {
-                unimplemented!()
+                // TODO: Confirm with core there's no need to fnmatch tags, and just a string
+                // match (lowercased) should be sufficient
+                let selector = &selector.to_lowercase();
+                Ok(graph.node_map.iter().filter_map(|(unique_id, node)| {
+                    node.has_tag(selector).then_some(unique_id.to_string())
+                }).collect())
             }
 
             Group => {
