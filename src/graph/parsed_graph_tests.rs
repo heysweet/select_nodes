@@ -1,20 +1,8 @@
 #[cfg(test)]
 mod parsed_graph_tests {
-    use crate::{
-        dbt_node_selector::{ModelNode, NodeType},
-        util::test::{assert_vec_to_set, vec_to_set},
-    };
+    use crate::util::test::*;
 
     use super::super::*;
-
-    fn get_resource_type() -> NodeType {
-        NodeType::Model(ModelNode {
-            fqn: vec![],
-            depends_on: vec![],
-            raw_code: "".to_owned(),
-            access: crate::dbt_node_selector::AccessType::Public,
-        })
-    }
 
     fn get_node(unique_id: &UniqueId) -> WrapperNode {
         WrapperNode::new(
@@ -24,7 +12,7 @@ mod parsed_graph_tests {
             "PKG",
             "PATH",
             "OPATH",
-            get_resource_type(),
+            get_resource_type(unique_id),
             vec![],
             vec![],
         )
@@ -53,8 +41,9 @@ mod parsed_graph_tests {
     ///
     /// All non-seed nodes also have `origin` as a parent.
     ///
-    /// All nodes are models (for now) since the `NodeType` should not factor into
-    /// graph traversal
+    /// Node type is `model` by default, but if the `UniqueId` starts with another
+    /// node type followed by an "_" (seed_, source_, exposure_, metric_, macro_),
+    /// then we will use that NodeType.
     fn get_test_data() -> (
         HashMap<UniqueId, WrapperNode>,
         HashMap<UniqueId, HashSet<UniqueId>>,
