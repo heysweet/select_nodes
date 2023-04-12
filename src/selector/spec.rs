@@ -3,7 +3,7 @@
 mod graph_selector_spec_tests;
 
 use indexmap::IndexMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::{collections::VecDeque, fmt::Display, num::ParseIntError, str::FromStr};
 
 /// core/dbt/graph/selector_spec.py
@@ -75,6 +75,7 @@ impl IndirectSelection {
 }
 
 impl Default for IndirectSelection {
+    /// The default is `Eager`
     fn default() -> Self {
         IndirectSelection::Eager
     }
@@ -141,7 +142,7 @@ impl ParsedMethod {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SelectionCriteria {
     pub raw: String,
     pub method: MethodName,
@@ -156,6 +157,7 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
+use crate::args::ParsedArgs;
 use crate::dbt_node_selector::UniqueId;
 use crate::graph::node::{NodeTypeKey, WrapperNode, WrapperNodeExt};
 use crate::SelectionError;
@@ -389,6 +391,7 @@ impl SelectionCriteria {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum SelectionSpec {
     SelectionCriteria(SelectionCriteria),
     SelectionIntersection,
@@ -396,6 +399,7 @@ pub enum SelectionSpec {
     SelectionUnion,
 }
 
+#[derive(Clone, Debug)]
 pub struct SelectionGroup {
     pub components: Vec<SelectionGroup>,
     pub indirect_selection: IndirectSelection,
@@ -423,26 +427,29 @@ impl SelectionGroup {
             selection_method: SelectionSpec::SelectionCriteria(selection_criteria.clone()),
         }
     }
-    // def get_selection_spec(self) -> SelectionSpec:
-    //     default_selector_name = self.config.get_default_selector_name()
-    //     # TODO:  The "eager" string below needs to be replaced with programatic access
-    //     #  to the default value for the indirect selection parameter in
-    //     # dbt.cli.params.indirect_selection
-    //     #
-    //     # Doing that is actually a little tricky, so I'm punting it to a new ticket GH #6397
-    //     indirect_selection = getattr(self.args, "INDIRECT_SELECTION", "eager")
 
-    //     if self.args.selector:
-    //         # use pre-defined selector (--selector)
-    //         spec = self.config.get_selector(self.args.selector)
-    //     elif not (self.selection_arg or self.exclusion_arg) and default_selector_name:
-    //         # use pre-defined selector (--selector) with default: true
-    //         fire_event(DefaultSelector(name=default_selector_name))
-    //         spec = self.config.get_selector(default_selector_name)
-    //     else:
-    //         # use --select and --exclude args
-    //         spec = parse_difference(self.selection_arg, self.exclusion_arg, indirect_selection)
-    //     return spec
+    pub fn get_selection_spec(self, args: &ParsedArgs) -> SelectionSpec {
+        // TODO: We don't allow a config or default_selector name yet
+
+        let indirect_selection = IndirectSelection::default();
+
+        match (&args.selector, &args.select, &args.exclude) {
+            (Some(selector), _, _) => {
+                // Use pre-defined selector (--selector)
+                todo!()
+            }
+            (_, None, None) => {
+                // Use pre-defined selector (--selector) with default: true
+                unimplemented!()
+            }
+            (_, selection_arg, exclusion_arg) => {
+                // Use --select and --exclude args
+                todo!()
+            }
+        }
+
+        // let default_selector_name = self.conf
+    }
 }
 
 impl SelectionSpec {

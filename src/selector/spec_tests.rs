@@ -159,23 +159,23 @@ mod select_nodes_tests {
 
     #[test]
     fn intersection() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
         todo!()
     }
 
     #[test]
     fn difference() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
         todo!()
     }
 
     #[test]
     fn union() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a");
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b");
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_c");
+        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
+        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
+        let fqn_c = SelectionCriteria::from_single_raw_spec("fqn:model_c").unwrap();
         todo!()
     }
 }

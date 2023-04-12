@@ -8,6 +8,7 @@ extern crate lazy_static;
 
 wai_bindgen_rust::export!("dbt-node-selector.wai");
 
+mod args;
 mod graph;
 mod selector;
 mod util;
