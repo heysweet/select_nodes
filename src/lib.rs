@@ -10,6 +10,7 @@ wai_bindgen_rust::export!("dbt-node-selector.wai");
 
 mod graph;
 mod selector;
+mod file;
 
 use crate::graph::UniqueId;
 

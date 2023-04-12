@@ -154,7 +154,7 @@ impl StateSelectorMethod {
             ("modified.macros", Some(previous_state)) => Self::check_modified_macros,
             ("modified.contract", Some(previous_state)) => unimplemented!(),
             (_, _) => Err(InvalidSelector(format!(
-                "Got an invalid macro selector '{}'",
+                "Got an invalid state selector '{}'",
                 selector
             )))?,
         };
