@@ -8,9 +8,9 @@ extern crate lazy_static;
 
 wai_bindgen_rust::export!("dbt-node-selector.wai");
 
-mod file;
 mod graph;
 mod selector;
+mod util;
 
 use crate::graph::UniqueId;
 

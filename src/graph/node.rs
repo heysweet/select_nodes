@@ -152,8 +152,8 @@ pub struct CommonNodeData {
 #[derive(Clone, Debug)]
 /// A generic node type which holds all node-specific logic inside `resource_type`
 pub struct WrapperNode {
-    common: CommonNodeData,
-    resource_type: NodeType,
+    pub common: CommonNodeData,
+    pub resource_type: NodeType,
 }
 
 pub trait WrapperNodeExt {
@@ -172,6 +172,8 @@ pub trait WrapperNodeExt {
     fn same_content(&self, other: &Self) -> bool;
 }
 
+/// These getters are just for ergomics, though we do
+/// expose the `common` prop as public.
 impl WrapperNodeExt for WrapperNode {
     fn unique_id(&self) -> &UniqueId {
         &self.common.unique_id
@@ -279,6 +281,7 @@ impl WrapperNode {
             .to_string())
     }
 
+    // TODO: Unit test!
     pub fn depends_on_macros(&self, graph: &ParsedGraph) -> HashSet<UniqueId> {
         self.common
             .depends_on

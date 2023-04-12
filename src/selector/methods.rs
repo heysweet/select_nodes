@@ -3,11 +3,11 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
     dbt_node_selector::{SelectionError, UniqueId},
-    file::fnmatch_normalized,
     graph::{
         node::{NodeTypeKey, WrapperNode, WrapperNodeExt},
         parsed_graph::ParsedGraph,
     },
+    util::file::fnmatch_normalized,
 };
 
 use super::{node_selector::PreviousState, state_selector_method::StateSelectorMethod, MethodName};
