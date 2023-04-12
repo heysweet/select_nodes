@@ -57,6 +57,17 @@ mod parsed_graph_tests {
         new_node(&mut node_map, &mut parents_map, "source_3", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_4", vec![]);
         new_node(&mut node_map, &mut parents_map, "source_5", vec![]);
+        // Macro, exposure, metric are just chained by number
+        new_node(&mut node_map, &mut parents_map, "macro_1", vec!["origin"]);
+        new_node(&mut node_map, &mut parents_map, "macro_2", vec!["macro_1"]);
+        new_node(&mut node_map, &mut parents_map, "exposure_1", vec!["origin"]);
+        new_node(&mut node_map, &mut parents_map, "exposure_2", vec!["exposure_1"]);
+        new_node(&mut node_map, &mut parents_map, "metric_1", vec!["origin"]);
+        new_node(&mut node_map, &mut parents_map, "metric_2", vec!["metric_2"]);
+        // We also tag on a macro, metric, and exposure to the end of each of the full words
+        new_node(&mut node_map, &mut parents_map, "macro_howdy", vec!["howdy"]);
+        new_node(&mut node_map, &mut parents_map, "macro_test", vec!["test"]);
+        new_node(&mut node_map, &mut parents_map, "exposure_hello", vec!["hello"]);
         new_node(
             &mut node_map,
             &mut parents_map,
@@ -252,7 +263,7 @@ mod parsed_graph_tests {
 
         let children = assert_ok!(graph.select_children(&vec_to_set(vec!["h"]), &None));
         let expected = vec_to_set(vec![
-            "he", "her", "hero", "ho", "how", "howd", "howdy", "hel", "hell", "hello",
+            "he", "her", "hero", "ho", "how", "howd", "howdy", "hel", "hell", "hello", "exposure_hello", "macro_howdy"
         ]);
 
         assert_eq!(expected, children);
@@ -263,7 +274,7 @@ mod parsed_graph_tests {
         let (node_map, parents_map) = get_test_data();
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
-        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["hello"]), &None));
+        let children = assert_ok!(graph.select_children(&vec_to_set(vec!["exposure_hello"]), &None));
         let expected: Vec<String> = vec![];
         let expected = vec_to_set(expected);
 
@@ -342,7 +353,7 @@ mod parsed_graph_tests {
         let children = assert_ok!(graph.select_childrens_parents(&vec_to_set(vec!["how"])));
         let expected = vec_to_set(vec![
             "origin", "h", "ho", "how", "howd", "howdy", "source_1", "source_2", "source_3", "source_4",
-            "source_5",
+            "source_5", "macro_howdy",
         ]);
 
         assert_eq!(expected, children);
@@ -358,7 +369,7 @@ mod parsed_graph_tests {
         // While "t", "te", "tes", "test" are all connected to "origin", they are not ancestors of any children
         let expected = vec_to_set(vec![
             "origin", "h", "he", "her", "hero", "hel", "hell", "hello", "ho", "how", "howd",
-            "howdy", "source_1", "source_2", "source_3", "source_4", "source_5",
+            "howdy", "source_1", "source_2", "source_3", "source_4", "source_5", "macro_howdy", "exposure_hello"
         ]);
 
         assert_eq!(expected, children);
