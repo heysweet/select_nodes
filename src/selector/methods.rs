@@ -3,6 +3,7 @@ use std::{collections::HashSet, path::Path, rc::Rc};
 
 use crate::{
     dbt_node_selector::{SelectionError, UniqueId},
+    file::fnmatch_normalized,
     graph::{
         node::{NodeTypeKey, WrapperNode, WrapperNodeExt},
         parsed_graph::ParsedGraph,
@@ -42,12 +43,12 @@ impl MethodName {
                     // encountering a wildcard but more expressive in naturally allowing you to
                     // match the rest of the fqn with more advanced patterns
                     let flat_fqn = flat_fqn[i..].join(".");
-                    let fnmatch = fnmatch_regex::glob_to_regex(flat_fqn.as_str());
+                    let regex = fnmatch_regex::glob_to_regex(flat_fqn.as_str());
                     let remainder = &(selector_parts)[i..];
                     let remainder = remainder.join(".");
-                    match fnmatch {
+                    match regex {
                         Err(_) => false,
-                        Ok(fnmatch) => fnmatch.is_match(remainder.as_str()),
+                        Ok(regex) => regex.is_match(remainder.as_str()),
                     };
                 }
             }
@@ -66,23 +67,6 @@ impl MethodName {
             let unscoped_fqn = &fqn[1..].to_vec();
             // Match nodes across different packages
             Self::is_selected_node(unscoped_fqn, qualified_name)
-        }
-    }
-
-    fn fnmatch(path: &str, selector: &str) -> bool {
-        let file_name = Path::new(path).file_name();
-        if file_name.is_none() {
-            return false;
-        }
-        let path = file_name.unwrap().to_str();
-        if path.is_none() {
-            return false;
-        }
-
-        let fnmatch = fnmatch_regex::glob_to_regex(path.unwrap());
-        match fnmatch {
-            Ok(fnmatch) => fnmatch.is_match(selector),
-            Err(_) => false,
         }
     }
 
@@ -124,7 +108,11 @@ impl MethodName {
             }
 
             Group => {
-                unimplemented!()
+                Ok(graph.node_map.iter().filter_map(|(unique_id, node)| {
+                    let config = node.config();
+                    let Some(group) = config.get("group") else { return None; };
+                    (group == selector).then_some(unique_id.to_string())
+                }).collect())
             }
 
             Source => {
@@ -132,14 +120,27 @@ impl MethodName {
             }
 
             Self::Path => {
-                unimplemented!()
+                let Ok(regex) = &fnmatch_regex::glob_to_regex(selector) else {
+                    return Err(SelectionError::FailedRegexMatchError(selector.to_string()));
+                };
+                Ok(graph.node_map.iter().filter_map(|(unique_id, node)| {
+                    if regex.is_match_at(node.original_file_path().as_str(), 0) {
+                        Some(unique_id.to_string())
+                    } else {
+                        None
+                    }
+                }).collect::<Vec<String>>())
             }
 
             File => Ok(graph
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    Self::fnmatch(&node.original_file_path(), selector).then(|| id.to_string())
+                    let file_path = &node.original_file_path();
+                    let Some(file_name) = Path::new(file_path).file_name() else { return None; };
+                    let Some(file_name) = file_name.to_str() else { return None; };
+                    let Ok(is_match) = fnmatch_normalized(file_name, selector) else { return None; };
+                    is_match.then_some(id.to_string())
                 })
                 .collect::<Vec<String>>()),
 
@@ -147,7 +148,8 @@ impl MethodName {
                 .node_map
                 .iter()
                 .filter_map(|(id, node)| {
-                    Self::fnmatch(&node.package_name(), selector).then(|| id.to_string())
+                    let Ok(is_match) = fnmatch_normalized(node.package_name(), selector) else { return None; };
+                    is_match.then_some(id.to_string())
                 })
                 .collect::<Vec<String>>()),
 

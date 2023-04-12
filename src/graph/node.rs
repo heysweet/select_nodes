@@ -152,43 +152,43 @@ pub struct WrapperNode {
 }
 
 pub trait WrapperNodeExt {
-    fn unique_id(&self) -> UniqueId;
-    fn depends_on(&self) -> HashSet<UniqueId>;
-    fn name(&self) -> String;
-    fn package_name(&self) -> String;
-    fn path(&self) -> String;
-    fn original_file_path(&self) -> String;
-    fn config(&self) -> HashMap<String, String>;
+    fn unique_id(&self) -> &UniqueId;
+    fn depends_on(&self) -> &HashSet<UniqueId>;
+    fn name(&self) -> &String;
+    fn package_name(&self) -> &String;
+    fn path(&self) -> &String;
+    fn original_file_path(&self) -> &String;
+    fn config(&self) -> &HashMap<String, String>;
     fn same_content(&self, other: &Self) -> bool;
-    fn resource_type(&self) -> NodeType;
+    fn resource_type(&self) -> &NodeType;
 
     fn fqn(&self) -> Option<Vec<String>>;
 }
 
 impl WrapperNodeExt for WrapperNode {
-    fn unique_id(&self) -> UniqueId {
-        self.common.unique_id.clone()
+    fn unique_id(&self) -> &UniqueId {
+        &self.common.unique_id
     }
-    fn depends_on(&self) -> HashSet<UniqueId> {
-        self.common.depends_on.clone()
+    fn depends_on(&self) -> &HashSet<UniqueId> {
+        &self.common.depends_on
     }
-    fn name(&self) -> String {
-        self.common.name.clone()
+    fn name(&self) -> &String {
+        &self.common.name
     }
-    fn package_name(&self) -> String {
-        self.common.package_name.clone()
+    fn package_name(&self) -> &String {
+        &self.common.package_name
     }
-    fn path(&self) -> String {
-        self.common.path.clone()
+    fn path(&self) -> &String {
+        &self.common.path
     }
-    fn original_file_path(&self) -> String {
-        self.common.original_file_path.clone()
+    fn original_file_path(&self) -> &String {
+        &self.common.original_file_path
     }
-    fn config(&self) -> HashMap<String, String> {
-        self.common.config.clone()
+    fn config(&self) -> &HashMap<String, String> {
+        &self.common.config
     }
-    fn resource_type(&self) -> NodeType {
-        self.resource_type.clone()
+    fn resource_type(&self) -> &NodeType {
+        &self.resource_type
     }
 
     fn same_content(&self, other: &Self) -> bool {
@@ -270,6 +270,6 @@ impl WrapperNode {
 pub fn generate_node_hash_map(nodes: Vec<WrapperNode>) -> HashMap<UniqueId, WrapperNode> {
     nodes
         .iter()
-        .map(|node| (node.unique_id(), node.to_owned()))
+        .map(|node| (node.unique_id().clone(), node.to_owned()))
         .collect()
 }
