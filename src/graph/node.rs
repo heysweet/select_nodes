@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "node_tests.rs"]
+mod node_tests;
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 
@@ -228,7 +232,12 @@ impl WrapperNode {
                 path: node.path.to_owned(),
                 original_file_path: node.original_file_path.to_owned(),
                 config: node.config.to_owned().into_iter().collect(),
-                tags: node.tags.to_owned().into_iter().map(|tag| tag.to_lowercase()).collect(),
+                tags: node
+                    .tags
+                    .to_owned()
+                    .into_iter()
+                    .map(|tag| tag.to_lowercase())
+                    .collect(),
             },
             resource_type: node.node_type.to_owned(),
         })

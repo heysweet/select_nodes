@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "types_tests.rs"]
+mod types_tests;
+
 use crate::dbt_node_selector::*;
 
 use super::node::{WrapperNode, WrapperNodeExt};
@@ -320,7 +324,10 @@ impl PartialEq for AccessType {
 
 impl PartialEq for ModelNode {
     fn eq(&self, other: &Self) -> bool {
-        self.fqn == other.fqn && self.depends_on == other.depends_on && self.access == other.access
+        self.fqn == other.fqn
+            && self.depends_on == other.depends_on
+            && self.access == other.access
+            && self.raw_code == other.raw_code
     }
 }
 
