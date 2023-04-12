@@ -229,12 +229,21 @@ mod parsed_graph_tests {
         let graph = ParsedGraph::from_parents(node_map, parents_map);
 
         let parents_map = &graph.parents_map;
-        assert!(graph.children_map.into_iter().all(|(parent_id, children)| {
+        let children_map = &graph.children_map;
+        assert!(children_map.into_iter().all(|(parent_id, children)| {
             children.iter().all(|child_id| {
                 let parents = parents_map.get(child_id);
                 assert!(parents.is_some());
                 let parents = parents.unwrap();
-                parents.contains(&parent_id)
+                parents.contains(parent_id)
+            })
+        }));
+        assert!(parents_map.into_iter().all(|(child_id, parents)| {
+            parents.iter().all(|parent_id| {
+                let children = children_map.get(parent_id);
+                assert!(children.is_some());
+                let parents = children.unwrap();
+                parents.contains(child_id)
             })
         }));
     }
