@@ -66,8 +66,13 @@ mod parsed_graph_tests {
         new_node(&mut node_map, &mut parents_map, "metric_2", vec!["metric_2"]);
         // We also tag on a macro, metric, and exposure to the end of each of the full words
         new_node(&mut node_map, &mut parents_map, "macro_howdy", vec!["howdy"]);
-        new_node(&mut node_map, &mut parents_map, "macro_test", vec!["test"]);
+        new_node(&mut node_map, &mut parents_map, "metric_test", vec!["test"]);
         new_node(&mut node_map, &mut parents_map, "exposure_hello", vec!["hello"]);
+        new_node(&mut node_map, &mut parents_map, "model_floating", vec![]);
+        new_node(&mut node_map, &mut parents_map, "source_floating", vec![]);
+        new_node(&mut node_map, &mut parents_map, "macro_floating", vec![]);
+        new_node(&mut node_map, &mut parents_map, "metric_floating", vec![]);
+        new_node(&mut node_map, &mut parents_map, "exposure_floating", vec![]);
         new_node(
             &mut node_map,
             &mut parents_map,
@@ -209,6 +214,23 @@ mod parsed_graph_tests {
         let expected = vec_to_set(vec!["her", "hel"]);
 
         assert_eq!(expected, children);
+    }
+
+    #[test]
+    /// This test is meant to confirm that every edge is represent in both the children and parents map
+    fn children_parents_exhaustive() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let parents_map = &graph.parents_map;
+        assert!(graph.children_map.into_iter().all(|(parent_id, children)| {
+            children.iter().all(|child_id| {
+                let parents = parents_map.get(child_id);
+                assert!(parents.is_some());
+                let parents = parents.unwrap();
+                parents.contains(&parent_id)
+            })
+        }));
     }
 
     #[test]
@@ -457,7 +479,76 @@ mod parsed_graph_tests {
         assert_eq!(num_sources, (&sources).len());
 
         // Confirm we got all sources
-        let expected = vec_to_set(vec!["source_1", "source_2", "source_3", "source_4", "source_5"]);
+        let expected = vec_to_set(vec!["source_1", "source_2", "source_3", "source_4", "source_5", "source_floating"]);
         assert_eq!(expected, sources);
+    }
+
+    #[test]
+    fn get_exposures() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let exposures = graph.get_exposures();
+        let num_exposures = (&exposures).len();
+
+        // Confirm that all returned nodes are actually sources
+        let exposures: HashSet<UniqueId> = exposures.into_iter().filter_map(|(unique_id, node)| {
+            if node.resource_type.key() == NodeTypeKey::Exposure {
+                Some(unique_id)
+            } else {
+                None
+            }
+        }).collect();
+        assert_eq!(num_exposures, (&exposures).len());
+
+        // Confirm we got all sources
+        let expected = vec_to_set(vec!["exposure_1", "exposure_2", "exposure_hello", "exposure_floating"]);
+        assert_eq!(expected, exposures);
+    }
+
+    #[test]
+    fn get_metrics() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let metrics = graph.get_metrics();
+        let num_metrics = (&metrics).len();
+
+        // Confirm that all returned nodes are actually sources
+        let metrics: HashSet<UniqueId> = metrics.into_iter().filter_map(|(unique_id, node)| {
+            if node.resource_type.key() == NodeTypeKey::Metric {
+                Some(unique_id)
+            } else {
+                None
+            }
+        }).collect();
+        assert_eq!(num_metrics, (&metrics).len());
+
+        // Confirm we got all sources
+        let expected = vec_to_set(vec!["metric_1", "metric_2", "metric_test", "metric_floating"]);
+        assert_eq!(expected, metrics);
+    }
+
+    #[test]
+    fn get_macros() {
+        let (node_map, parents_map) = get_test_data();
+        let graph = ParsedGraph::from_parents(node_map, parents_map);
+
+        let macros = graph.get_macros();
+        let num_macros = (&macros).len();
+
+        // Confirm that all returned nodes are actually sources
+        let macros: HashSet<UniqueId> = macros.into_iter().filter_map(|(unique_id, node)| {
+            if node.resource_type.key() == NodeTypeKey::Macro {
+                Some(unique_id)
+            } else {
+                None
+            }
+        }).collect();
+        assert_eq!(num_macros, (&macros).len());
+
+        // Confirm we got all sources
+        let expected = vec_to_set(vec!["macro_1", "macro_2", "macro_howdy", "macro_floating"]);
+        assert_eq!(expected, macros);
     }
 }
