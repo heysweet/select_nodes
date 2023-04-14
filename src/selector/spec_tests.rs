@@ -4,6 +4,8 @@
 mod select_nodes_tests {
     use std::path::Path;
 
+    use crate::util::test::vec_to_set;
+
     use super::super::*;
 
     use MethodName::*;
@@ -159,24 +161,45 @@ mod select_nodes_tests {
 
     #[test]
     fn intersection() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
-        
-        todo!()
+        // TODO: Failing nondeterministically?
+        let components = vec![
+            vec_to_set(vec!["model_a", "model_b", "model_c"]),
+            vec_to_set(vec!["model_c", "model_d"])
+        ];
+        let operation = SetOperation::Intersection;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["model_c"]);
+        assert_eq!(expected, combined)
     }
 
     #[test]
     fn difference() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
-        todo!()
+        // TODO: Failing nondeterministically?
+        let components = vec![
+            vec_to_set(vec!["model_a", "model_b", "model_c"]),
+            vec_to_set(vec!["model_c", "model_d"])
+        ];
+        let operation = SetOperation::Difference;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["model_a", "model_b"]);
+        assert_eq!(expected, combined)
     }
 
     #[test]
     fn union() {
-        let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
-        let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
-        let fqn_c = SelectionCriteria::from_single_raw_spec("fqn:model_c").unwrap();
-        todo!()
+        let components = vec![
+            vec_to_set(vec!["model_a", "model_b", "model_c"]),
+            vec_to_set(vec!["model_c", "model_d"])
+        ];
+        let operation = SetOperation::Union;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["model_a", "model_b", "model_c", "model_d"]);
+        assert_eq!(expected, combined)
     }
 }

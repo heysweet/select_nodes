@@ -497,19 +497,19 @@ impl SetOperation {
     pub fn combine_selections(&self, selections: &Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
         let mut hash_sets = selections.iter();
         let first = hash_sets.next();
-        let iter = selections[0].iter();
 
-        match self {
-            Self::Intersection => {
-                let combination = iter.filter(|&id| hash_sets.all(|set| set.contains(id)));
+        match (first, self) {
+            (None, _) => HashSet::new(),
+            (Some(first), Self::Intersection) => {
+                let combination = first.into_iter().filter(|&id| hash_sets.all(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            Self::Difference => {
-                let combination = iter.filter(|&id| !hash_sets.any(|set| set.contains(id)));
+            (Some(first), Self::Difference) => {
+                let combination = first.into_iter().filter(|&id| !hash_sets.any(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            Self::Union => {
-                let mut combination = HashSet::clone(first.unwrap());
+            (Some(first), Self::Union) => {
+                let mut combination = HashSet::clone(first);
 
                 for item in hash_sets {
                     combination.extend(item.to_owned());
