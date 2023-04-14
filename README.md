@@ -17,7 +17,3 @@ This library builds to WASM and uses [Wasmer](https://wasmerio.github.io/wasmer-
 The `*.wai` file generates the WAI Bindgen code, which is then implemented in this rust code as the Guest WASM library which will be used in a Python or JS Host library.
 
 The core logic is broken down into Graph logic and Selector logic, where Graph logic encapsulates nodes, edges, and graph traversal, while the Selector logic encapsulates parsing a dbt selector string ([Node Selector Syntax](https://docs.getdbt.com/reference/node-selection/syntax)), and determining how to traverse a graph using the criteria determined from the node selector.
-
-## Previous State Calculation
-
-All state that is required to determine whether a node is changed is provided in the [node.wai](./node.wai) file. When we process each node, we calculate a hash for the node. This allows us to frontload the work of determining diffs, optimizing for the usecase where there are multiple requests to a given NodeSelector.
