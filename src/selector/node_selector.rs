@@ -288,10 +288,10 @@ impl NodeSelector {
 
     pub fn get_selected_type(
         &self,
-        selection_spec: &SelectionGroup,
+        selection_group: &SelectionGroup,
         resource_type_filter: &ResourceTypeFilter,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let (selected_nodes, _indirect_only) = self.select_nodes(selection_spec)?;
+        let (selected_nodes, _indirect_only) = self.select_nodes(selection_group)?;
 
         self.filter_selection(&selected_nodes, resource_type_filter)
     }
@@ -306,9 +306,9 @@ impl NodeSelector {
     ///         selected
     pub fn get_selected(
         &self,
-        selection_spec: &SelectionGroup,
+        selection_group: &SelectionGroup,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        self.get_selected_type(selection_spec, &ResourceTypeFilter::All)
+        self.get_selected_type(selection_group, &ResourceTypeFilter::All)
     }
 
     fn _is_match(
@@ -353,9 +353,9 @@ impl NodeSelector {
     /// - Return final (unfiltered) selection set
     fn select_nodes(
         &self,
-        selection_spec: &SelectionGroup,
+        selection_group: &SelectionGroup,
     ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_spec)?;
+        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_group)?;
         let indirect_only =
             HashSet::difference(&indirect_nodes, &direct_nodes).map(|s| s.to_string());
         Ok((direct_nodes.to_owned(), indirect_only.collect()))
@@ -491,9 +491,9 @@ impl NodeSelector {
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_spec = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
 
-        let selected_set: HashSet<String> = self.get_selected(&selection_spec)?;
+        let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
 
         Ok(selected_set.into_iter().collect())
     }
@@ -504,10 +504,10 @@ impl NodeSelector {
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_spec = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
 
         let selected_set: HashSet<String> =
-            self.get_selected_type(&selection_spec, &resource_type_filter)?;
+            self.get_selected_type(&selection_group, &resource_type_filter)?;
 
         Ok(selected_set.into_iter().collect())
     }

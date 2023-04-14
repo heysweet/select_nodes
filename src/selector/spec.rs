@@ -424,7 +424,7 @@ impl SelectionGroup {
         }
     }
 
-    pub fn get_selection_spec(self, args: &InputArgs) -> SelectionGroup {
+    pub fn get_selection_group(self, args: &InputArgs) -> SelectionGroup {
         // TODO: We don't allow a config or default_selector name yet
 
         let indirect_selection = IndirectSelection::default();

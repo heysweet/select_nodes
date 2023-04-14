@@ -161,6 +161,7 @@ mod select_nodes_tests {
     fn intersection() {
         let fqn_a = SelectionCriteria::from_single_raw_spec("fqn:model_a").unwrap();
         let fqn_b = SelectionCriteria::from_single_raw_spec("fqn:model_b").unwrap();
+        
         todo!()
     }
 
