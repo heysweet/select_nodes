@@ -495,27 +495,33 @@ impl SelectionGroup {
 
 impl SetOperation {
     pub fn combine_selections(&self, selections: &Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
-        let mut hash_sets = selections.iter();
-        let first = hash_sets.next();
-
-        match (first, self) {
-            (None, _) => HashSet::new(),
-            (Some(first), Self::Intersection) => {
-                let combination = first.into_iter().filter(|&id| hash_sets.all(|set| set.contains(id)));
-                combination.map(|b: &String| b.to_owned()).collect()
-            }
-            (Some(first), Self::Difference) => {
-                let combination = first.into_iter().filter(|&id| !hash_sets.any(|set| set.contains(id)));
-                combination.map(|b: &String| b.to_owned()).collect()
-            }
-            (Some(first), Self::Union) => {
-                let mut combination = HashSet::clone(first);
-
-                for item in hash_sets {
-                    combination.extend(item.to_owned());
+        match selections.len() {
+            0 => HashSet::new(),
+            1 => selections[0].clone(),
+            _ => {
+                let first = &selections[0];
+                let hash_sets = selections[1..].iter();
+        
+                match self {
+                    Self::Intersection => {
+                        let combination = first.into_iter().filter(|&id| hash_sets.clone().all(|set| set.contains(id)));
+                        combination.map(|b: &String| b.to_owned()).collect()
+                    }
+                    Self::Difference => {
+                        let combination = first.into_iter().filter(|&id| !hash_sets.clone().any(|set| set.contains(id)));
+                        combination.map(|b: &String| b.to_owned()).collect()
+                    }
+                    Self::Union => {
+                        let mut combination = HashSet::clone(first);
+        
+                        for item in hash_sets {
+                            combination.extend(item.to_owned());
+                        }
+                        combination
+                    }
                 }
-                combination
             }
         }
+        
     }
 }
