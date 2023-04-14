@@ -20,7 +20,7 @@ use crate::dbt_node_selector::{
 use crate::IndirectSelection::*;
 use crate::SelectionError::*;
 
-use super::state_selector_method::StateSelectorMethod;
+use super::{spec::SetOperation, state_selector_method::StateSelectorMethod};
 
 pub struct PreviousState {
     pub graph: Option<Rc<ParsedGraph>>,
@@ -288,10 +288,10 @@ impl NodeSelector {
 
     pub fn get_selected_type(
         &self,
-        selection_group: &SelectionGroup,
+        selection_spec: &SelectionGroup,
         resource_type_filter: &ResourceTypeFilter,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        let (selected_nodes, _indirect_only) = self.select_nodes(selection_group)?;
+        let (selected_nodes, _indirect_only) = self.select_nodes(selection_spec)?;
 
         self.filter_selection(&selected_nodes, resource_type_filter)
     }
@@ -306,9 +306,9 @@ impl NodeSelector {
     ///         selected
     pub fn get_selected(
         &self,
-        selection_group: &SelectionGroup,
+        selection_spec: &SelectionGroup,
     ) -> Result<HashSet<UniqueId>, SelectionError> {
-        self.get_selected_type(selection_group, &ResourceTypeFilter::All)
+        self.get_selected_type(selection_spec, &ResourceTypeFilter::All)
     }
 
     fn _is_match(
@@ -353,9 +353,9 @@ impl NodeSelector {
     /// - Return final (unfiltered) selection set
     fn select_nodes(
         &self,
-        selection_group: &SelectionGroup,
+        selection_spec: &SelectionGroup,
     ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_group)?;
+        let (direct_nodes, indirect_nodes) = self.select_nodes_recursively(selection_spec)?;
         let indirect_only =
             HashSet::difference(&indirect_nodes, &direct_nodes).map(|s| s.to_string());
         Ok((direct_nodes.to_owned(), indirect_only.collect()))
@@ -368,9 +368,9 @@ impl NodeSelector {
         &self,
         selection_group: &SelectionGroup,
     ) -> Result<(DirectNodes, IndirectNodes), SelectionError> {
-        match &selection_group.selection_method {
+        match &selection_group.spec {
             SelectionSpec::SelectionCriteria(spec) => self.get_nodes_from_criteria(&spec),
-            _ => {
+            SelectionSpec::SetOperation(operation) => {
                 let bundles = selection_group
                     .components
                     .iter()
@@ -385,8 +385,8 @@ impl NodeSelector {
                     direct_sets.push(direct);
                 }
 
-                let initial_direct = selection_group.combined(direct_sets);
-                let indirect_nodes = selection_group.combined(indirect_sets);
+                let initial_direct = operation.combine_selections(&direct_sets);
+                let indirect_nodes = operation.combine_selections(&indirect_sets);
 
                 let direct_nodes: HashSet<UniqueId> = self.incorporate_indirect_nodes(
                     &initial_direct,
@@ -473,11 +473,6 @@ impl NodeSelector {
 
         Ok((direct_nodes, indirect_nodes))
     }
-
-    // Return the subset of selected nodes that is a match for this selector.
-    // fn filter_selection(&self, selected: HashSet<UniqueId>) -> HashSet<UniqueId> {
-
-    // }
 }
 
 impl NodeSelector {
@@ -496,9 +491,9 @@ impl NodeSelector {
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_spec = SelectionGroup::from_criteria(&selection_criteria);
 
-        let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
+        let selected_set: HashSet<String> = self.get_selected(&selection_spec)?;
 
         Ok(selected_set.into_iter().collect())
     }
@@ -509,10 +504,10 @@ impl NodeSelector {
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_spec = SelectionGroup::from_criteria(&selection_criteria);
 
         let selected_set: HashSet<String> =
-            self.get_selected_type(&selection_group, &resource_type_filter)?;
+            self.get_selected_type(&selection_spec, &resource_type_filter)?;
 
         Ok(selected_set.into_iter().collect())
     }

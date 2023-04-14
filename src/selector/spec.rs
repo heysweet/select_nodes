@@ -157,7 +157,7 @@ pub struct SelectionCriteria {
     pub indirect_selection: IndirectSelection,
 }
 
-use crate::args::ParsedArgs;
+use crate::args::InputArgs;
 use crate::dbt_node_selector::UniqueId;
 use crate::graph::node::{NodeTypeKey, WrapperNode, WrapperNodeExt};
 use crate::SelectionError;
@@ -392,11 +392,16 @@ impl SelectionCriteria {
 }
 
 #[derive(Clone, Debug)]
+pub enum SetOperation {
+    Intersection,
+    Difference,
+    Union,
+}
+
+#[derive(Clone, Debug)]
 pub enum SelectionSpec {
     SelectionCriteria(SelectionCriteria),
-    SelectionIntersection(Vec<SelectionCriteria>),
-    SelectionDifference(Vec<SelectionCriteria>),
-    SelectionUnion(Vec<SelectionCriteria>),
+    SetOperation(SetOperation),
 }
 
 #[derive(Clone, Debug)]
@@ -404,31 +409,22 @@ pub struct SelectionGroup {
     pub components: Vec<SelectionGroup>,
     pub indirect_selection: IndirectSelection,
     pub expect_exists: bool,
-    pub selection_method: SelectionSpec,
+    pub spec: SelectionSpec,
     pub raw: String,
 }
 
-use SelectionSpec::{SelectionDifference, SelectionIntersection, SelectionUnion};
-
 impl SelectionGroup {
-    pub fn combined(&self, selections: Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
-        if selections.len() == 0 {
-            return HashSet::new();
-        }
-        self.selection_method.combine_selections(&selections)
-    }
-
     pub fn from_criteria(selection_criteria: &SelectionCriteria) -> Self {
         Self {
             components: vec![],
             indirect_selection: selection_criteria.indirect_selection,
             expect_exists: false,
             raw: selection_criteria.raw.clone(),
-            selection_method: SelectionSpec::SelectionCriteria(selection_criteria.clone()),
+            spec: SelectionSpec::SetOperation(SetOperation::Union),
         }
     }
 
-    pub fn get_selection_spec(self, args: &ParsedArgs) -> SelectionSpec {
+    pub fn get_selection_spec(self, args: &InputArgs) -> SelectionGroup {
         // TODO: We don't allow a config or default_selector name yet
 
         let indirect_selection = IndirectSelection::default();
@@ -450,32 +446,69 @@ impl SelectionGroup {
 
         // let default_selector_name = self.conf
     }
+
+    pub fn intersection(
+        raw: String,
+        components: Vec<SelectionGroup>,
+        indirect_selection: IndirectSelection,
+        expect_exists: bool,
+    ) -> Self {
+        Self {
+            components,
+            indirect_selection,
+            expect_exists,
+            spec: SelectionSpec::SetOperation(SetOperation::Intersection),
+            raw,
+        }
+    }
+
+    pub fn union(
+        raw: String,
+        components: Vec<SelectionGroup>,
+        indirect_selection: IndirectSelection,
+        expect_exists: bool,
+    ) -> Self {
+        Self {
+            components,
+            indirect_selection,
+            expect_exists,
+            spec: SelectionSpec::SetOperation(SetOperation::Union),
+            raw,
+        }
+    }
+
+    pub fn difference(
+        raw: String,
+        components: Vec<SelectionGroup>,
+        indirect_selection: IndirectSelection,
+        expect_exists: bool,
+    ) -> Self {
+        Self {
+            components,
+            indirect_selection,
+            expect_exists,
+            spec: SelectionSpec::SetOperation(SetOperation::Difference),
+            raw,
+        }
+    }
 }
 
-impl SelectionSpec {
-    fn combine_selections(&self, selections: &Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
+impl SetOperation {
+    pub fn combine_selections(&self, selections: &Vec<HashSet<UniqueId>>) -> HashSet<UniqueId> {
         let mut hash_sets = selections.iter();
         let first = hash_sets.next();
         let iter = selections[0].iter();
 
         match self {
-            SelectionIntersection(selection_criteria) => {
+            Self::Intersection => {
                 let combination = iter.filter(|&id| hash_sets.all(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionDifference(selection_criteria) => {
+            Self::Difference => {
                 let combination = iter.filter(|&id| !hash_sets.any(|set| set.contains(id)));
                 combination.map(|b: &String| b.to_owned()).collect()
             }
-            SelectionSpec::SelectionCriteria(selection_critierion) => {
-                let mut combination = HashSet::clone(first.unwrap());
-
-                for item in hash_sets {
-                    combination.extend(item.to_owned());
-                }
-                combination
-            }
-            SelectionUnion(selection_criteria) => {
+            Self::Union => {
                 let mut combination = HashSet::clone(first.unwrap());
 
                 for item in hash_sets {
