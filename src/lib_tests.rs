@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod select_nodes_tests {
-    use crate::{dbt_node_selector::NodeType, graph::node::NodeTypeKey};
+    use crate::{dbt_node_selector::NodeType, graph::node::NodeTypeKey, util::test::get_resource_type};
 
     use super::super::*;
     use crate::dbt_node_selector::*;
@@ -13,32 +13,32 @@ mod select_nodes_tests {
     fn get_test_edges() -> Vec<Edge> {
         vec![
             Edge {
-                unique_id: "a".to_string(),
+                unique_id: "source_a".to_string(),
                 parents: vec![],
             },
             Edge {
-                unique_id: "b".to_string(),
+                unique_id: "source_b".to_string(),
                 parents: vec![],
             },
             Edge {
-                unique_id: "c".to_string(),
+                unique_id: "source_c".to_string(),
                 parents: vec![],
             },
             Edge {
-                unique_id: "d".to_string(),
+                unique_id: "source_d".to_string(),
                 parents: vec![],
             },
             Edge {
-                unique_id: "e".to_string(),
+                unique_id: "source_e".to_string(),
                 parents: vec![],
             },
             Edge {
-                unique_id: "f".to_string(),
+                unique_id: "source_f".to_string(),
                 parents: vec![],
             },
             Edge {
                 unique_id: "an".to_string(),
-                parents: vec!["a".to_string()],
+                parents: vec!["source_a".to_string()],
             },
             Edge {
                 unique_id: "and".to_string(),
@@ -59,13 +59,13 @@ mod select_nodes_tests {
             Edge {
                 unique_id: "andrew_test".to_string(),
                 /// All ancestors are parents
-                parents: ["a", "an", "and", "andr", "andre", "andrew"]
+                parents: ["source_a", "an", "and", "andr", "andre", "andrew"]
                     .map(|s| s.to_string())
                     .into(),
             },
             Edge {
                 unique_id: "ab".to_string(),
-                parents: vec!["a".to_string()],
+                parents: vec!["source_a".to_string()],
             },
             Edge {
                 unique_id: "abb".to_string(),
@@ -82,11 +82,11 @@ mod select_nodes_tests {
             Edge {
                 unique_id: "abby_test".to_string(),
                 /// All ancestors are parents
-                parents: ["a", "abb", "abby"].map(|s| s.to_string()).into(),
+                parents: ["source_a", "abb", "abby"].map(|s| s.to_string()).into(),
             },
             Edge {
                 unique_id: "ba".to_string(),
-                parents: vec!["b".to_string()],
+                parents: vec!["source_b".to_string()],
             },
             Edge {
                 unique_id: "bar".to_string(),
@@ -98,7 +98,7 @@ mod select_nodes_tests {
             },
             Edge {
                 unique_id: "ca".to_string(),
-                parents: vec!["c".to_string()],
+                parents: vec!["source_c".to_string()],
             },
             Edge {
                 unique_id: "car".to_string(),
@@ -107,34 +107,10 @@ mod select_nodes_tests {
         ]
     }
 
-    fn make_resource_type(package_name: String, id: String, resource_type: &str) -> Result<NodeType, SelectorCreateError> {
-        let resource_type = NodeTypeKey::from_key(resource_type)?;
-        let fqn: Vec<String> = [package_name, format!("{}", id)].to_vec();
-        match resource_type {
-            NodeTypeKey::Model => {
-                Ok(NodeType::Model(ModelNode{access: AccessType::Public, depends_on: vec![], fqn: vec![]}))
-            },
-            NodeTypeKey::Analysis => Ok(NodeType::Analysis(AnalysisNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::Test => Ok(NodeType::Test(TestNode{fqn: vec![]})),
-            NodeTypeKey::Snapshot => Ok(NodeType::Snapshot(SnapshotNode{fqn: vec![]})),
-            NodeTypeKey::Operation => Ok(NodeType::Operation(OperationNode{fqn: vec![]})),
-            NodeTypeKey::Seed => Ok(NodeType::Seed(SeedNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::Rpc => Ok(NodeType::Rpc(RpcNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::SqlOperation => Ok(NodeType::SqlOperation(SqlOperationNode{depends_on: vec![], fqn: vec![]})),
-            NodeTypeKey::Doc => Ok(NodeType::Doc(DocNode{block_contents: "".to_string()})),
-            NodeTypeKey::Source => Ok(NodeType::Source(SourceNode{fqn: vec![]})),
-            NodeTypeKey::Macro => Ok(NodeType::Macro(MacroNode{macro_sql: "".to_string(), depends_on: vec![]})),
-            NodeTypeKey::Exposure => Ok(NodeType::Exposure(ExposureNode{fqn: vec![]})),
-            NodeTypeKey::Metric => Ok(NodeType::Metric(MetricNode{fqn: vec![]})),
-            NodeTypeKey::Group => Ok(NodeType::Group(GroupNode{fqn: vec![]})),
-        }
-    }
-
     fn make_node(id: impl Into<String>) -> Result<Node, SelectorCreateError> {
         let id: String = id.into();
         let package_name = format!("pkg_{}", &id);
-        let resource_type = if (&id).len() == 1 { "source" } else { "model" };
-        let node_type = make_resource_type(package_name.clone(), id.clone(), resource_type)?;
+        let node_type = get_resource_type(&id);
         Ok(crate::dbt_node_selector::Node {
             unique_id: id.clone(),
             depends_on: vec!["test".to_string()],
@@ -143,6 +119,8 @@ mod select_nodes_tests {
             path: format!("path_{}", &id),
             original_file_path: format!("opath_{}", &id),
             node_type,
+            config: vec![],
+            tags: vec![],
         })
     }
 
@@ -154,7 +132,7 @@ mod select_nodes_tests {
     }
 
     fn get_test_node_selector(nodes: Vec<Node>, edges: Vec<Edge>) -> crate::selector::node_selector::NodeSelector {
-        let node_selector = crate::selector::node_selector::NodeSelector::from(&nodes, &edges, None);
+        let node_selector = crate::selector::node_selector::NodeSelector::from(nodes, edges, None);
         node_selector.unwrap()
     }
 
@@ -234,7 +212,7 @@ mod select_nodes_tests {
 
         let result = node_selector._select("+and".to_string());
 
-        let mut expected = get_expected(vec!["a", "an", "and"]);
+        let mut expected = get_expected(vec!["source_a", "an", "and"]);
         let mut result = result.unwrap();
         result.sort();
         expected.sort();

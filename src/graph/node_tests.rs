@@ -76,22 +76,22 @@ mod node_tests {
 
     #[test]
     fn node_type_key_from_node_type() {
-        assert!(NodeTypeKey::from_node_type(&get_model_node()) == NodeTypeKey::Model);
-        assert!(NodeTypeKey::from_node_type(&get_analysis_node()) == NodeTypeKey::Analysis);
-        assert!(NodeTypeKey::from_node_type(&get_test_node()) == NodeTypeKey::Test);
-        assert!(NodeTypeKey::from_node_type(&get_snapshot_node()) == NodeTypeKey::Snapshot);
-        assert!(NodeTypeKey::from_node_type(&get_operation_node()) == NodeTypeKey::Operation);
-        assert!(NodeTypeKey::from_node_type(&get_seed_node()) == NodeTypeKey::Seed);
-        assert!(NodeTypeKey::from_node_type(&get_rpc_node()) == NodeTypeKey::Rpc);
+        assert!(NodeTypeKey::from_node_type(&get_model_node("a")) == NodeTypeKey::Model);
+        assert!(NodeTypeKey::from_node_type(&get_analysis_node("b")) == NodeTypeKey::Analysis);
+        assert!(NodeTypeKey::from_node_type(&get_test_node("c")) == NodeTypeKey::Test);
+        assert!(NodeTypeKey::from_node_type(&get_snapshot_node("d")) == NodeTypeKey::Snapshot);
+        assert!(NodeTypeKey::from_node_type(&get_operation_node("e")) == NodeTypeKey::Operation);
+        assert!(NodeTypeKey::from_node_type(&get_seed_node("f")) == NodeTypeKey::Seed);
+        assert!(NodeTypeKey::from_node_type(&get_rpc_node("g")) == NodeTypeKey::Rpc);
         assert!(
-            NodeTypeKey::from_node_type(&get_sql_operation_node()) == NodeTypeKey::SqlOperation
+            NodeTypeKey::from_node_type(&get_sql_operation_node("h")) == NodeTypeKey::SqlOperation
         );
-        assert!(NodeTypeKey::from_node_type(&get_doc_node()) == NodeTypeKey::Doc);
-        assert!(NodeTypeKey::from_node_type(&get_source_node()) == NodeTypeKey::Source);
-        assert!(NodeTypeKey::from_node_type(&get_macro_node()) == NodeTypeKey::Macro);
-        assert!(NodeTypeKey::from_node_type(&get_exposure_node()) == NodeTypeKey::Exposure);
-        assert!(NodeTypeKey::from_node_type(&get_metric_node()) == NodeTypeKey::Metric);
-        assert!(NodeTypeKey::from_node_type(&get_group_node()) == NodeTypeKey::Group);
+        assert!(NodeTypeKey::from_node_type(&get_doc_node("i")) == NodeTypeKey::Doc);
+        assert!(NodeTypeKey::from_node_type(&get_source_node("j")) == NodeTypeKey::Source);
+        assert!(NodeTypeKey::from_node_type(&get_macro_node("k")) == NodeTypeKey::Macro);
+        assert!(NodeTypeKey::from_node_type(&get_exposure_node("l")) == NodeTypeKey::Exposure);
+        assert!(NodeTypeKey::from_node_type(&get_metric_node("m")) == NodeTypeKey::Metric);
+        assert!(NodeTypeKey::from_node_type(&get_group_node("n")) == NodeTypeKey::Group);
     }
 
     fn get_wrapper_model(resource_type: NodeType) -> WrapperNode {
@@ -112,54 +112,54 @@ mod node_tests {
     #[test]
     fn wrapper_node_fqn() {
         assert_eq!(
-            get_wrapper_model(get_model_node()).fqn(),
-            Some(vec!["MODEL".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_model_node("a")).fqn(),
+            Some(vec!["MODEL".to_owned(), "FQN".to_owned(), "a".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_analysis_node()).fqn(),
-            Some(vec!["ANALYSIS".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_analysis_node("b")).fqn(),
+            Some(vec!["ANALYSIS".to_owned(), "FQN".to_owned(), "b".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_test_node()).fqn(),
-            Some(vec!["TEST".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_test_node("c")).fqn(),
+            Some(vec!["TEST".to_owned(), "FQN".to_owned(), "c".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_snapshot_node()).fqn(),
-            Some(vec!["SNAPSHOT".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_snapshot_node("d")).fqn(),
+            Some(vec!["SNAPSHOT".to_owned(), "FQN".to_owned(), "d".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_operation_node()).fqn(),
-            Some(vec!["OPERATION".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_operation_node("e")).fqn(),
+            Some(vec!["OPERATION".to_owned(), "FQN".to_owned(), "e".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_rpc_node()).fqn(),
-            Some(vec!["RPC".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_rpc_node("f")).fqn(),
+            Some(vec!["RPC".to_owned(), "FQN".to_owned(), "f".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_sql_operation_node()).fqn(),
-            Some(vec!["SQL_OPERATION".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_sql_operation_node("g")).fqn(),
+            Some(vec!["SQL_OPERATION".to_owned(), "FQN".to_owned(), "g".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_source_node()).fqn(),
-            Some(vec!["SOURCE".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_source_node("h")).fqn(),
+            Some(vec!["SOURCE".to_owned(), "FQN".to_owned(), "h".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_exposure_node()).fqn(),
-            Some(vec!["EXPOSURE".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_exposure_node("i")).fqn(),
+            Some(vec!["EXPOSURE".to_owned(), "FQN".to_owned(), "i".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_metric_node()).fqn(),
-            Some(vec!["METRIC".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_metric_node("j")).fqn(),
+            Some(vec!["METRIC".to_owned(), "FQN".to_owned(), "j".to_owned()])
         );
         assert_eq!(
-            get_wrapper_model(get_group_node()).fqn(),
-            Some(vec!["GROUP".to_owned(), "FQN".to_owned()])
+            get_wrapper_model(get_group_node("k")).fqn(),
+            Some(vec!["GROUP".to_owned(), "FQN".to_owned(), "k".to_owned()])
         );
     }
 
     #[test]
     fn wrapper_node_no_fqn() {
-        assert_eq!(get_wrapper_model(get_doc_node()).fqn(), None);
-        assert_eq!(get_wrapper_model(get_macro_node()).fqn(), None);
+        assert_eq!(get_wrapper_model(get_doc_node("a")).fqn(), None);
+        assert_eq!(get_wrapper_model(get_macro_node("b")).fqn(), None);
     }
 }

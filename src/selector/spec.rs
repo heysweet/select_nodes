@@ -414,13 +414,13 @@ pub struct SelectionGroup {
 }
 
 impl SelectionGroup {
-    pub fn from_criteria(selection_criteria: &SelectionCriteria) -> Self {
+    pub fn from_criteria(selection_criteria: SelectionCriteria) -> Self {
         Self {
             components: vec![],
             indirect_selection: selection_criteria.indirect_selection,
             expect_exists: false,
             raw: selection_criteria.raw.clone(),
-            spec: SelectionSpec::SetOperation(SetOperation::Union),
+            spec: SelectionSpec::SelectionCriteria(selection_criteria),
         }
     }
 

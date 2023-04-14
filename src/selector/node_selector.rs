@@ -491,7 +491,7 @@ impl NodeSelector {
 
     pub fn _select(&self, selector: String) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(selection_criteria);
 
         let selected_set: HashSet<String> = self.get_selected(&selection_group)?;
 
@@ -504,7 +504,7 @@ impl NodeSelector {
         resource_type_filter: ResourceTypeFilter,
     ) -> Result<Vec<UniqueId>, SelectionError> {
         let selection_criteria = SelectionCriteria::from_single_raw_spec(selector)?;
-        let selection_group = SelectionGroup::from_criteria(&selection_criteria);
+        let selection_group = SelectionGroup::from_criteria(selection_criteria);
 
         let selected_set: HashSet<String> =
             self.get_selected_type(&selection_group, &resource_type_filter)?;

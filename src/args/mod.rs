@@ -48,7 +48,7 @@ fn parse_union(
             let selection_criteria =
                 SelectionCriteria::from_single_spec(part.to_string(), &indirect_selection);
             selection_criteria.and_then(|selection_criteria| {
-                Ok(SelectionGroup::from_criteria(&selection_criteria))
+                Ok(SelectionGroup::from_criteria(selection_criteria))
             })
         });
         let intersection_components: Result<Vec<SelectionGroup>, SelectionError> = a.collect();
