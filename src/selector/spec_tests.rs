@@ -203,6 +203,19 @@ mod select_nodes_tests {
     }
 
     #[test]
+    fn intersection_one() {
+        let components = vec![
+            vec_to_set(vec!["model_a", "model_b", "model_c"]),
+        ];
+        let operation = SetOperation::Intersection;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["model_a", "model_b", "model_c"]);
+        assert_eq!(expected, combined)
+    }
+
+    #[test]
     fn intersection_multi() {
         let components = vec![
             vec_to_set(vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]),
@@ -253,6 +266,19 @@ mod select_nodes_tests {
         let components = vec![
             vec_to_set(vec!["model_a", "model_b", "model_c"]),
             vec_to_set(empty.clone())
+        ];
+        let operation = SetOperation::Difference;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["model_a", "model_b", "model_c"]);
+        assert_eq!(expected, combined)
+    }
+
+    #[test]
+    fn difference_once() {
+        let components = vec![
+            vec_to_set(vec!["model_a", "model_b", "model_c"])
         ];
         let operation = SetOperation::Difference;
 
@@ -337,6 +363,19 @@ mod select_nodes_tests {
         let components = vec![
             vec_to_set(vec!["a", "b"]),
             vec_to_set(empty.clone()),
+        ];
+        let operation = SetOperation::Union;
+
+        let combined = operation.combine_selections(&components);
+
+        let expected = vec_to_set(vec!["a", "b"]);
+        assert_eq!(expected, combined)
+    }
+
+    #[test]
+    fn union_one() {
+        let components = vec![
+            vec_to_set(vec!["a", "b"]),
         ];
         let operation = SetOperation::Union;
 
