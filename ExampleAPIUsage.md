@@ -1,7 +1,19 @@
 # Recommended API Design to Avoid Having the Full DAG in Memory
 
 This file was written as a pitch on a way to solve the problem of not having
-all nodes in memory. The general design is to 
+all nodes in memory. The general design is to store a highly compressable
+DAG representation which is just a mapping of node_ids to a list of children
+node IDs.
+
+This API was also designed to enable parallel work, and is solvable in 4 batches
+of promises
+
+1. Get SelectionSpecs from input string (WASM) while fetching compressed graph (database/S3?)
+2. Use the SelectionSpecs to query for all target nodes (database) while instantiating instantiate NodeSelector with compressed graph (WASM)
+3. Get selection/exclusion set for each selection spec by traversing the graph (WASM)
+
+After all batches are complete, we can just do unions and differences on the outputs
+and be done!
 
 ```Typescript
 // We do INTERSECT up front, and do UNION and DIFFERENCE at the end
@@ -58,11 +70,13 @@ async function getSubgraph(selector, exclude) {
     // 3. all nodes in marts/finance directory
     
     // Difference(Union(), AllItemsInMarts/Finance)
+    // Resolve Batch 1
     const [selectSpecs, excludeSpecs] = await Promise.all([
         SelectorSpec(selector),
         SelectorSpec(exclude)
     ]);
 
+    // Start Batch 2
     const nodeSelectorPromise = NodeSelector(await compressedGraphPromise);
     
     const selectedNodesPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
@@ -82,6 +96,7 @@ async function getSubgraph(selector, exclude) {
         return unionSet(nodeSelectorSets);
     });
 
+    // Resolve Batch 3
     const [selectedSet, excludedSet] = await Promise.all([
         selectedNodesPromises,
         excludedNodesPromises
