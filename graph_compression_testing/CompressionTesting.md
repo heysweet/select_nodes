@@ -58,4 +58,4 @@ I'll need to look at real-world data to compare, but anecdotally, nodes having a
 
 A fun note from above, note that the String Map actually _does_ compress better. For (2000,000), 7.7MB -> 2.5MB (32.4% of the original) vs 62.3MB -> 6.0MB (9.6% of the original). But even though the duplicated strings throughout are highly compressible, in both the compressed and uncompressed for, the ID Map approach outperforms in terms of raw byte count.
 
-Even though the ID map is a much smaller representation, we will still get a O(1) retrieval time for children.
+Even though the ID map is a much smaller representation, we will still get a O(1) retrieval time for children (after we do a `O(n + m)` parse time into a `HashMap<UniqueId, Vec<UniqueId>>`), a parse we would have to do for either format.
