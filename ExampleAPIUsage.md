@@ -5,15 +5,50 @@ all nodes in memory. The general design is to store a highly compressable
 DAG representation which is just a mapping of node_ids to a list of children
 node IDs.
 
-This API was also designed to enable parallel work, and is solvable in 4 batches
+This API was also designed to enable parallel work, and is solvable in a sequence of 2 batches
 of promises
 
 1. Get SelectionSpecs from input string (WASM) while fetching compressed graph (database/S3?)
-2. Use the SelectionSpecs to query for all target nodes (database) while instantiating instantiate NodeSelector with compressed graph (WASM)
-3. Get selection/exclusion set for each selection spec by traversing the graph (WASM)
+2. The second set of batches is comprised of 2 phases for each Selection Spec:
 
-After all batches are complete, we can just do unions and differences on the outputs
+   a. Use the SelectionSpecs to query for all target nodes (database) while instantiating a NodeSelector with compressed graph (WASM)
+   
+   b. Get selection/exclusion set for each selection spec by traversing the graph (WASM)
+
+We wait for all 2b requests to resolve, and then we can just do unions and differences on the outputs
 and be done!
+
+The compressed graph representation could be something like the following:
+
+```json
+{
+    "ids": ["model_a", "model_b", "model_c"],
+    "children": {
+        "model_a": [1, 2],
+        "model_b": [2],
+        "model_c": []
+    }
+}
+```
+
+This would allow for a relative optimal compression, O(1) lookup of children, and a small
+memory footprint when uncompressed. This option would be used if we need to take the full compressed graph as one input string and manage it all in memory.
+
+This would be in comparison to:
+
+```json
+{
+    "model_a": ["model_b", "model_c"],
+    "model_b": ["model_c"],
+    "model_c": []
+}
+```
+
+which would like compress better, and still support O(1) lookup of children, but take up a much larger memory footprint if we loaded the full thing into memory at once, uncompressed. This solution would work better if the WASM logic was fed in complete lines of the JSON file batch-by-batch, as we wouldn't have to worry about managing the full uncompressed version, and would have less state to worry about (mapping ID's to indices) while parsing the data.
+
+Any compressed graph will just be read in and then converted into a `HashMap<UniqueId, Vec<UniqueId>`.
+
+A problem with just passing in the compressed raw string.
 
 ```Typescript
 // We do INTERSECT up front, and do UNION and DIFFERENCE at the end
@@ -62,6 +97,7 @@ const selector = "2+my_model+3 tags:nightly,config.materialized:table";
 const exclude = "path:marts/finance"
 
 async function getSubgraph(selector, exclude) {
+    // Start Batch 1
     const compressedGraphPromise = retrieveCompressedGraph();
 
     // Converted into instructions on what base nodes to retrieve, in this case
@@ -70,12 +106,12 @@ async function getSubgraph(selector, exclude) {
     // 3. all nodes in marts/finance directory
     
     // Difference(Union(), AllItemsInMarts/Finance)
-    // Resolve Batch 1
     const [selectSpecs, excludeSpecs] = await Promise.all([
         SelectorSpec(selector),
         SelectorSpec(exclude)
     ]);
 
+    // Resolve Batch 1
     // Start Batch 2
     const nodeSelectorPromise = NodeSelector(await compressedGraphPromise);
     
@@ -96,7 +132,7 @@ async function getSubgraph(selector, exclude) {
         return unionSet(nodeSelectorSets);
     });
 
-    // Resolve Batch 3
+    // Resolve Batch 2
     const [selectedSet, excludedSet] = await Promise.all([
         selectedNodesPromises,
         excludedNodesPromises
