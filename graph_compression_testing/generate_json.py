@@ -11,6 +11,14 @@ def unique_id(resource_type: str, project_name: str, name: str, version: str):
         version=version
     )
 
+other_packages = [
+    "imported_package",
+    "dbt_utils",
+    "longer_project_name",
+    "FOREIGN_IMPORTED_NAME",
+    "their_package_name"
+]
+
 def id(index) -> str:
     resource_type = ""
     project_name = ""
@@ -18,7 +26,7 @@ def id(index) -> str:
     version = ""
 
     if index % 13 == 0:
-        project_name = "imported_package"
+        project_name = other_packages[index % len(other_packages)] ["imported_package"]
     else:
         project_name = "our_package_name"
 
@@ -82,10 +90,10 @@ def make_json_files(num_nodes, max_num_edges):
     int_id_json = json.dumps(dict_with_indices)
     string_id_json = json.dumps(dict_with_strings)
 
-    with open("{0}_nodes_{1}_edges_string.json".format(num_nodes, num_edges), "w") as outfile:
+    with open("{0}_nodes_{1}_max_edges_{2}_total_edges_string.json".format(num_nodes, max_num_edges, num_edges), "w") as outfile:
         outfile.write(string_id_json)
 
-    with open("{0}_nodes_{1}_edges_int.json".format(num_nodes, num_edges), "w") as outfile:
+    with open("{0}_nodes_{1}_max_edges_{2}_total_edges_int.json".format(num_nodes, max_num_edges, num_edges), "w") as outfile:
         outfile.write(int_id_json)
 
 

@@ -56,15 +56,18 @@ data compresses.
 Here are some outputs:
 
 | Number of Nodes | Average Num Edges | String Map (uncompressed) | String Map (compressed) | ID Map (uncompressed) | ID Map (compressed) |
-| --------------: | ----------------: |------------------------: | ----------------------: | --------------------: | ------------------: |
-| 100             | 10                |   49 KB                  |     4 KB                |     9 KB              |     3 KB            |
-| 2,000           | 1000              | 62.3 MB                  |   6.0 MB                |   7.7 MB              |   2.5 MB            |
-| 10,000          | 100               |  47.2 MB                 |   4.9 MB                |   6.4 MB              |   2.2 MB            |
-| 50,000          | 75                | 183.4 MB                 |  21.2 MB                |  28.7 MB              |   9.8 MB            |
-| 100,000         | 15                |  77.4 MB                 |   9.4 MB                |  15.5 MB              |   4.6 MB            |
-| 1,000,000       | 5                 | 297.0 MB                 |  39.1 MB                |  91.2 MB              |  21.5 MB            |
-| 1,000,000       | 25                |  1.28 GB                 | 169.5 MB                | 250.9 MB              |  88.0 MB            |
-| 10,000,000      | 5                 |  3.03 GB                 | 425.3 MB                | 972.3 MB              | 242.1 MB            |
+| --------------: | ----------------: |-------------------------: | ----------------------: | --------------------: | ------------------: |
+| 100             | 10                |   49 KB                   |     4 KB                |     9 KB              |     3 KB            |
+| 2,000           | 1000              | 62.3 MB                   |   6.0 MB                |   7.7 MB              |   2.5 MB            |
+| 10,000          | 100               |  47.2 MB                  |   4.9 MB                |   6.4 MB              |   2.2 MB            |
+| 50,000          | 75                | 183.4 MB                  |  21.2 MB                |  28.7 MB              |   9.8 MB            |
+| 100,000         | 15                |  77.4 MB                  |   9.4 MB                |  15.5 MB              |   4.6 MB            |
+| 1,000,000       | 5                 | 297.0 MB                  |  39.1 MB                |  91.2 MB              |  21.5 MB            |
+| 1,000,000       | 25                |  1.28 GB                  | 169.5 MB                | 250.9 MB              |  88.0 MB            |
+| 10,000,000      | 5                 |  3.03 GB                  | 425.3 MB                | 972.3 MB              | 242.1 MB            |
+| 10,000,000      | 15                |  8.05 GB                  |  1.16 GB                |  1.87 GB              | 640.8 MB            |
+
+The last entry above represents 10,000,000 nodes and 149,986,094 edges, for a total of 159,986,094 entries. This means we're using 11.86 bytes per entry in the uncompressed ID Map, and 4.000 bytes per entry in the compressed ID Map. In particular, each new node means a new Unique we have to store which takes up ~40 chars per ID, while each new edge takes up to log_10(num_nodes), which in the 10,000,000 case is a max of 8 chars per edge (plus some additional chars for for ", ").
 
 As we can see above, avoiding the repetition of IDs throughout the document is very helpful for the uncompressed version, and even though the String Map versions actually _compress better_ due to all the repeated substrings.
 
