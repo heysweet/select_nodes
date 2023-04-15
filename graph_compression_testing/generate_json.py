@@ -3,44 +3,57 @@ import random
 import math
 import sys
 
+def unique_id(resource_type: str, project_name: str, name: str, version: str):
+    return "{resource_type}.{project_name}.{name}.v{version}".format(
+        resource_type=resource_type,
+        project_name=project_name,
+        name=name,
+        version=version
+    )
+
 def id(index) -> str:
-    unique_id = ""
+    resource_type = ""
+    project_name = ""
+    name = str(index)
+    version = ""
 
     if index % 13 == 0:
-        unique_id += "imported_package::"
+        project_name = "imported_package"
     else:
-        unique_id += "our_package_name::"
+        project_name = "our_package_name"
 
     if index % 2 == 0:
-        unique_id += "my_"
+        name += "_my"
 
     if index % 5 == 0:
-        unique_id += "finance_"
+        name += "_finance"
     elif index % 5 == 1:
-        unique_id += "test_"
+        name += "_project_idea"
     elif index % 5 == 2:
-        unique_id += "ingested_"
+        name += "_ingested"
     elif index % 5 == 3:
-        unique_id += "dbt_project_"
+        name += "_dbt_project"
     else:
-        unique_id += "revenue_"
+        name += "_revenue"
 
     if index % 7 == 0:
-        unique_id += "model"
+        resource_type = "model"
     elif index % 7 == 1:
-        unique_id += "macro"
+        resource_type = "macro"
     elif index % 7 == 2:
-        unique_id += "source"
+        resource_type = "source"
     elif index % 7 == 3:
-        unique_id += "documentation"
+        resource_type = "documentation"
     elif index % 7 == 4:
-        unique_id += "group"
+        resource_type = "group"
     elif index % 7 == 5:
-        unique_id += "node"
+        resource_type = "node"
     else:
-        unique_id += "metric"
+        resource_type = "metric"
 
-    return unique_id + "_" + str(index) + ".sql"
+    version = str(index % 17)
+
+    return unique_id(resource_type, project_name, name, version)
 
 def make_json_files(num_nodes, max_num_edges):
     max_num_edges += 1

@@ -7,29 +7,43 @@ I explored two alternatives for a simple graph compression:
 
 Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting 5 nodes with a max of 3 edges per node:
 
-## String Map (338 bytes)
+## String Map (458 bytes)
 
 ```JSON
 {
-    "imported_package::my_finance_model_0.sql": [
-        "our_package_name::dbt_project_documentation_3.sql"
+    "model.imported_package.0_my_finance.v0": [],
+    "macro.our_package_name.1_project_idea.v1": [
+        "source.our_package_name.2_my_ingested.v2",
+        "group.our_package_name.4_my_revenue.v4"
     ],
-    "our_package_name::test_macro_1.sql": [], "our_package_name::my_ingested_source_2.sql": [
-        "our_package_name::my_revenue_group_4.sql"
+    "source.our_package_name.2_my_ingested.v2": [
+        "group.our_package_name.4_my_revenue.v4",
+        "documentation.our_package_name.3_dbt_project.v3"
     ],
-    "our_package_name::dbt_project_documentation_3.sql": [], "our_package_name::my_revenue_group_4.sql": []
+    "documentation.our_package_name.3_dbt_project.v3": [
+        "group.our_package_name.4_my_revenue.v4"
+    ],
+    "group.our_package_name.4_my_revenue.v4": []
 }
 ```
 
-## ID Map (270 bytes)
+## ID Map (275 bytes)
 
 ```JSON
 {
     "ids": [
-        "imported_package::my_finance_model_0.sql", "our_package_name::test_macro_1.sql", "our_package_name::my_ingested_source_2.sql", "our_package_name::dbt_project_documentation_3.sql", "our_package_name::my_revenue_group_4.sql"
-        ],
-    "children": [[3], [], [4], [], []]
-}
+        "model.imported_package.0_my_finance.v0",
+        "macro.our_package_name.1_project_idea.v1",
+        "source.our_package_name.2_my_ingested.v2",
+        "documentation.our_package_name.3_dbt_project.v3",
+        "group.our_package_name.4_my_revenue.v4"
+    ], "children": [
+        [],
+        [2, 4],
+        [4, 3],
+        [4],
+        []
+    ]}
 ```
 
 # Raw and Compressed Output Sizes
