@@ -78,13 +78,22 @@ import { NodeSelector, SelectorSpec } from '@dbt-labs/node-selector';
 
 type UniqueId = string;
 
+
+/**
+ * ~Intersection could be done as a SQL query~
+ * 
+ * The above is no longer true, see [Recommended Architecture](RecommendedArchitecture.md#intersections).
+ */
+function intersectionSet(sets: Set<UniqueId>[]) : Set<UniqueId> { return new Set(); }
+
 /** Given a list of sets, get the union of all sets */
 function unionSet(sets: Set<UniqueId>[]) : Set<UniqueId> { return new Set(); }
 
 /** Given a list of sets, take the first set and subtract elements from all other sets */ 
 function differenceSet(sets: Set<UniqueId>[]) : Set<UniqueId> { return new Set(); }
 
-// Intersection is just done as a SQL query
+// 
+// ^ this is no longer true 
 
 /**
  * https://www.cs.cmu.edu/afs/cs/project/pscico-guyb/realworld/www/slidesS18/compression6.pdf

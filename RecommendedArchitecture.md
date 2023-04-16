@@ -156,3 +156,25 @@ Two options for this data are either:
 ### Supporting Exclusion
 
 As a tailend exercise, if we want to support both `select` and `exclude`, you just run the same logic twice, and then perform a Set Difference on the selected and excluded set. This is not something we support in today's docs, but is a trivial lift once the rest of this is implemented.
+
+## Why should selector string input be accepted in the backend?
+
+It's reasonable to say that instead of accepting an arbitrary selector string, we should only expose an endpoint that accepts a single SelectionSpec or a list of SelectionSpecs.
+
+I think that accepting a list of selection specs _or_ and arbitrary selector string would allow us to best provide service-level limitations like "Your selection spec has too many methods" or "This selection would return too many nodes". If we only accept a single selection string (without supporting spaces and commas) then we have a much more limited ability to provide those service-level limitation (other than rate limiting or a specific method match that matches too many nodes).
+
+## Set Operations
+
+It should be noted that we need to do all set operations _after_ we do graph traversal.
+
+### Unions
+
+This is because individual specs need to crawl graphs relative to target nodes, so we cannot union before traversal.
+
+### Intersections
+
+We cannot do intersection before graph traversal, because we may miss out on data. Imagine a DAG (node_a -> node_b). I select `"node_a,node_b"`, an intersection would be no nodes. But if I do `"node_a,1+node_b"`, we would expect the result to be `{ node_a }`. If we performed an intersection before the traversal, we could not get this result.
+
+### Difference
+
+The selector spec performs all unions and intersections for select and exclude separately, and then performs a difference of the two at the end. The simplest reason we can't front load this sooner is that we've already shown we need to do unions and intersections _after_ graph traversal, and the spec requires us to perform the difference after all other unions and intersections, therefore, we cannot perform a difference any sooner than graph traversal at a minimum.
