@@ -5,18 +5,19 @@ all nodes in memory. The general design is to store a highly compressable
 DAG representation which is just a mapping of node_ids to a list of children
 node IDs.
 
-This API was also designed to enable parallel work, and is solvable in a sequence of 2 batches
-of promises
+This API was also designed to enable parallel work, and is solvable in a sequence of 4 batches
+of promises:
 
 1. Get SelectionSpecs from input string (WASM) while fetching compressed graph (database/S3?)
 2. The second set of batches is comprised of 2 phases for each Selection Spec:
 
    a. Use the SelectionSpecs to query for all target nodes (database) while instantiating a NodeSelector with compressed graph (WASM)
    
-   b. Get selection/exclusion set for each selection spec by traversing the graph (WASM)
+   b. Get selection/exclusion children set for each selection spec by traversing the graph (WASM)
+3. Invert the graph representation to traverse parents efficiently (WASM)
+4. Get selection/exclusion parents (or parents of children if the spec asks for it with "@") set for each selection spec by traversing the graph (WASM)
 
-We wait for all 2b requests to resolve, and then we can just do unions and differences on the outputs
-and be done!
+We wait for the fourth batch of requests to resolve, and then we can just do unions and differences on the outputs and be done!
 
 The compressed graph representation could be something like the following:
 
@@ -115,18 +116,18 @@ async function getSubgraph(selector, exclude) {
     // Start Batch 2
     const nodeSelectorPromise = NodeSelector(await compressedGraphPromise);
     
-    const selectedNodesPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
+    const selectedNodesChildrenPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
         return queryForSpec(selectSpec).then(async (selectedNodeIds) => {
             const nodeSelector = await nodeSelectorPromise;
-            nodeSelector.expandSet(selectSpec, selectedNodeIds);
+            return nodeSelector.selectChildren(selectSpec, selectedNodeIds);
         });
     })).then((nodeSelectorSets) => {
         return unionSet(nodeSelectorSets);
     });
-    const excludedNodesPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
+    const excludedNodesChildrenPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
         return queryForSpec(excludeSpec).then(async (excludedNodeIds) => {
             const nodeSelector = await nodeSelectorPromise;
-            nodeSelector.expandSet(excludeSpec, excludedNodeIds);
+            nodeSelector.selectChildren(excludeSpec, excludedNodeIds);
         });
     })).then((nodeSelectorSets) => {
         return unionSet(nodeSelectorSets);
@@ -134,10 +135,31 @@ async function getSubgraph(selector, exclude) {
 
     // Resolve Batch 2
     const [selectedSet, excludedSet] = await Promise.all([
-        selectedNodesPromises,
-        excludedNodesPromises
+        selectedNodesChildrenPromises,
+        excludedNodesChildrenPromises
     ]);
+    
+    const selectedNodesChildrenPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
+        return queryForSpec(selectSpec).then(async (selectedNodeIds) => {
+            const nodeSelector = await nodeSelectorPromise;
+            return nodeSelector.selectChildren(selectSpec, selectedNodeIds);
+        });
+    })).then((nodeSelectorSets) => {
+        return unionSet(nodeSelectorSets);
+    });
+    const excludedNodesChildrenPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
+        return queryForSpec(excludeSpec).then(async (excludedNodeIds) => {
+            const nodeSelector = await nodeSelectorPromise;
+            nodeSelector.selectChildren(excludeSpec, excludedNodeIds);
+        });
+    })).then((nodeSelectorSets) => {
+        return unionSet(nodeSelectorSets);
+    });
     
     return differenceSet([selectedSet, excludedSet]);
 }
 ```
+
+# Notes
+
+If instead we were planning on doing graph traversal on the frontend, we would want to embed the job ID in the binary so that we can discover a mismatch and re-request the WASM binary/compressed DAG.

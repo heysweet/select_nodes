@@ -7,7 +7,7 @@ I explored two alternatives for a simple graph compression:
 
 Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting 5 nodes with a max of 3 edges per node:
 
-## String Map (458 bytes)
+## String map (458 bytes)
 
 ```JSON
 {
@@ -27,7 +27,7 @@ Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting
 }
 ```
 
-## ID Map (275 bytes)
+## ID map (275 bytes)
 
 ```JSON
 {
@@ -46,7 +46,7 @@ Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting
     ]}
 ```
 
-# Raw and Compressed Output Sizes
+# Raw and compressed output sizes
 
 The script I create creates a legal DAG, where each node has a random number of edges between [0, MAX_NUM_EDGES].
 
@@ -67,7 +67,7 @@ Here are some outputs:
 | 10,000,000      | 5                 |  3.03 GB                  | 425.3 MB                | 972.3 MB              | 242.1 MB            |
 | 10,000,000      | 15                |  8.05 GB                  |  1.16 GB                |  1.87 GB              | 640.8 MB            |
 
-The last entry above represents 10,000,000 nodes and 149,986,094 edges, for a total of 159,986,094 entries. This means we're using 11.86 bytes per entry in the uncompressed ID Map, and 4.000 bytes per entry in the compressed ID Map. In particular, each new node means a new Unique we have to store which takes up ~40 chars per ID, while each new edge takes up to log_10(num_nodes), which in the 10,000,000 case is a max of 8 chars per edge (plus some additional chars for for ", ").
+The last entry above represents 10,000,000 nodes and 149,986,094 edges, for a total of 159,986,094 entries. Even though ID's are 28-65 bytes (chars) long in my example, we're only using 11.86 bytes per entry in the uncompressed ID Map, and 4.000 bytes per entry in the compressed ID Map. In particular, each new node means a new Unique we have to store which takes up ~40 chars per ID, while each new edge takes up to log_10(num_nodes), which in the 10,000,000 case is a max of 8 chars per edge (plus some additional chars for for ", ").
 
 As we can see above, avoiding the repetition of IDs throughout the document is very helpful for the uncompressed version, and even though the String Map versions actually _compress better_ due to all the repeated substrings.
 
@@ -76,3 +76,33 @@ I'll need to look at real-world data to compare, but anecdotally, nodes having a
 A fun note from above, note that the String Map actually _does_ compress better. For (2000,000), 7.7MB -> 2.5MB (32.4% of the original) vs 62.3MB -> 6.0MB (9.6% of the original). But even though the duplicated strings throughout are highly compressible, in both the compressed and uncompressed for, the ID Map approach outperforms in terms of raw byte count.
 
 Even though the ID map is a much smaller representation, we will still get a O(1) retrieval time for children (after we do a `O(n + m)` parse time into a `HashMap<UniqueId, Vec<UniqueId>>`), a parse we would have to do for either format.
+
+# Limitations
+
+# Frontend WASM
+
+Mozillas claims [Note: A WebAssembly page has a constant size of 65,536 bytes, i.e., 64KiB and a maximum size of 100 pages (6.4MiB)](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory/Memory). This would mean we can't support graph traversal in the frontend (beyond small example DAGs).
+
+A v8 blog claims you can have [up to 4GB of memory in WASM](https://v8.dev/blog/4gb-wasm-memory). If this claim is true and consistent across browers, we could offload the work of graph traversal to the frontend, reducing the load on our endpoints, removing the expectation to load in a full graph/wasm binaries, and avoiding state management in the Discovery API.
+
+# Node WASM
+
+# Potential pipeline and what to ship
+
+## Ship a compressed JSON
+
+The simplest path forward from here is to add a new ingestion step to codex which generates a JSON file like the above, and then compressed and publishes it somewhere. We likely only need the N most recent JSON blobs for a user (1 for discovery API, 2 if we want to allow diffing, or some small number like 5 if we want to allow users to have some recent historical comparisons)
+
+A search would involve a step to pull down the JSON blob, process it in real time, adding to the request time. The best two optiosn for ptimization in this case would just be pre-downloading/caching the JSON, which would be hard to do for all possible users of the CA APIs, or we could bre-process the JSON blob
+
+## Ship a compressed WASM binary that's already processed the JSON
+
+If the ingestion step involved generating a JSON file like the above, and then building a WASM wrapper which has already processed the JSON file, then we would be adding extra work to every ingestion step, without every binary being used. This would also increase the size of the compressed file we would have to store, but I cant' imagine substantially since the logic is mostly "Read in a JSON file, insert it into a HashMap, and then functionality to switch between children and parents modes.
+
+## Store a JSON blob for everybody, expose an endpoint that allows users to generate a Parents and Children map binary/binaries
+
+Always building compressed WASM libraries may be expensive to do on all runs, if we're expecting some small percentage of accounts to be using the Explorer compared to the number of runs. What we can do is on explorer startup call an endpoint which requests codex to pull down the most recently stored JSON file, and generate the parents and children selector(s) as one large or two smaller binaries.
+
+These binaries are considered a pre-requisite of custom graph traversal selector logic, and if you request the DAG via a selector
+
+## Graph Traversal on the Frontend

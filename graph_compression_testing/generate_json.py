@@ -19,6 +19,12 @@ other_packages = [
     "their_package_name"
 ]
 
+"""
+if running 10,000,000 times, shortest ID possible:
+`seed.dbt_utils.1_finance_.v0`
+Longest ID possible: 
+`documentation.FOREIGN_IMPORTED_NAME.10000000_my_project_idea_.v16`
+"""
 def id(index) -> str:
     resource_type = ""
     project_name = ""
@@ -55,7 +61,7 @@ def id(index) -> str:
     elif index % 7 == 4:
         resource_type = "group"
     elif index % 7 == 5:
-        resource_type = "node"
+        resource_type = "seed"
     else:
         resource_type = "metric"
 
