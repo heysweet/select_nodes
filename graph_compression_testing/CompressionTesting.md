@@ -7,7 +7,9 @@ I explored two alternatives for a simple graph compression:
 
 Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting 5 nodes with a max of 3 edges per node:
 
-## String map (458 bytes)
+## String map
+
+_458 bytes_
 
 ```JSON
 {
@@ -27,7 +29,9 @@ Below are visual outputs of `python3 generate_json.py 5 3`, where I'm requesting
 }
 ```
 
-## ID map (275 bytes)
+## ID map
+
+_(275 bytes)_
 
 ```JSON
 {
@@ -81,13 +85,15 @@ Even though the ID map is a much smaller representation, we will still get a O(1
 
 # Frontend WASM
 
-Mozillas claims [Note: A WebAssembly page has a constant size of 65,536 bytes, i.e., 64KiB and a maximum size of 100 pages (6.4MiB)](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory/Memory). This would mean we can't support graph traversal in the frontend (beyond small example DAGs).
+Mozilla claims [Note: A WebAssembly page has a constant size of 65,536 bytes, i.e., 64KiB and a maximum size of 100 pages (6.4MiB)](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory/Memory). This would mean we can't support graph traversal in the frontend (beyond small example DAGs). This didn't line up with my other findings.
 
-A v8 blog claims you can have [up to 4GB of memory in WASM](https://v8.dev/blog/4gb-wasm-memory). If this claim is true and consistent across browers, we could offload the work of graph traversal to the frontend, reducing the load on our endpoints, removing the expectation to load in a full graph/wasm binaries, and avoiding state management in the Discovery API.
+A v8 blog claims you can have [up to 4GB of memory in WASM](https://v8.dev/blog/4gb-wasm-memory). V8 is used in all Chromium browsers (which is well over 60% of browser traffic, but does not include Safari or Firefox most notably). If we're able to use 4GB of memory in the majority of browsers consistently, we could offload the work of large graph traversal to the frontend, reducing the load on our endpoints, removing the expectation to load in a full graph/wasm binaries, and avoiding state management in the Discovery API.
+
+You can use [this link](http://clb.confined.space/dump/mem_growth.html) to manually test the memory limits of the WASM runtime in different browsers. I tested this in Firefox, Safari, Chrome, and Arc and managed to allocation 4GB of heap space in each of the above browsers.
 
 # Node WASM
 
-# Potential pipeline and what to ship
+Node also uses V8 which leaves us with 4GB of memory available.
 
 ## Ship a compressed JSON
 
@@ -104,5 +110,3 @@ If the ingestion step involved generating a JSON file like the above, and then b
 Always building compressed WASM libraries may be expensive to do on all runs, if we're expecting some small percentage of accounts to be using the Explorer compared to the number of runs. What we can do is on explorer startup call an endpoint which requests codex to pull down the most recently stored JSON file, and generate the parents and children selector(s) as one large or two smaller binaries.
 
 These binaries are considered a pre-requisite of custom graph traversal selector logic, and if you request the DAG via a selector
-
-## Graph Traversal on the Frontend
