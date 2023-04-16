@@ -5,6 +5,8 @@ all nodes in memory. The general design is to store a highly compressable
 DAG representation which is just a mapping of node_ids to a list of children
 node IDs.
 
+## With only children represented (space optimization)
+
 This API was also designed to enable parallel work, and is solvable in a sequence of 4 batches
 of promises:
 
@@ -18,6 +20,22 @@ of promises:
 4. Get selection/exclusion parents (or parents of children if the spec asks for it with "@") set for each selection spec by traversing the graph (WASM)
 
 We wait for the fourth batch of requests to resolve, and then we can just do unions and differences on the outputs and be done!
+
+## With children and parents represented (2x as much space, runtime optimizations)
+
+This API was also designed to enable parallel work, and is solvable in a sequence of 2 batches
+of promises:
+
+1. Get SelectionSpecs from input string (WASM) while fetching compressed graph (database/S3?)
+2. The second set of batches is comprised of 2 phases for each Selection Spec:
+
+   a. Use the SelectionSpecs to query for all target nodes (database) while instantiating a NodeSelector with compressed graph (WASM)
+   
+   b. Get selection/exclusion set of children and parents for each selection spec by traversing the graph (WASM)
+
+We wait for the second batch of requests to resolve, and then we can just do unions and differences on the outputs and be done!
+
+## Graph representation
 
 The compressed graph representation could be something like the following:
 
@@ -49,7 +67,7 @@ which would like compress better, and still support O(1) lookup of children, but
 
 Any compressed graph will just be read in and then converted into a `HashMap<UniqueId, Vec<UniqueId>`.
 
-A problem with just passing in the compressed raw string.
+## Example usage
 
 ```Typescript
 // We do INTERSECT up front, and do UNION and DIFFERENCE at the end
@@ -116,7 +134,7 @@ async function getSubgraph(selector, exclude) {
     // Start Batch 2
     const nodeSelectorPromise = NodeSelector(await compressedGraphPromise);
     
-    const selectedNodesChildrenPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
+    const selectedNodesPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
         return queryForSpec(selectSpec).then(async (selectedNodeIds) => {
             const nodeSelector = await nodeSelectorPromise;
             return nodeSelector.selectChildren(selectSpec, selectedNodeIds);
@@ -124,7 +142,7 @@ async function getSubgraph(selector, exclude) {
     })).then((nodeSelectorSets) => {
         return unionSet(nodeSelectorSets);
     });
-    const excludedNodesChildrenPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
+    const excludedNodesPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
         return queryForSpec(excludeSpec).then(async (excludedNodeIds) => {
             const nodeSelector = await nodeSelectorPromise;
             nodeSelector.selectChildren(excludeSpec, excludedNodeIds);
@@ -135,26 +153,9 @@ async function getSubgraph(selector, exclude) {
 
     // Resolve Batch 2
     const [selectedSet, excludedSet] = await Promise.all([
-        selectedNodesChildrenPromises,
-        excludedNodesChildrenPromises
+        selectedNodesPromises,
+        excludedNodesPromises
     ]);
-    
-    const selectedNodesChildrenPromises = Promise.all(selectSpecs.map(async (selectSpec) => {
-        return queryForSpec(selectSpec).then(async (selectedNodeIds) => {
-            const nodeSelector = await nodeSelectorPromise;
-            return nodeSelector.selectChildren(selectSpec, selectedNodeIds);
-        });
-    })).then((nodeSelectorSets) => {
-        return unionSet(nodeSelectorSets);
-    });
-    const excludedNodesChildrenPromises = Promise.all(selectSpecs.map(async (excludeSpec) => {
-        return queryForSpec(excludeSpec).then(async (excludedNodeIds) => {
-            const nodeSelector = await nodeSelectorPromise;
-            nodeSelector.selectChildren(excludeSpec, excludedNodeIds);
-        });
-    })).then((nodeSelectorSets) => {
-        return unionSet(nodeSelectorSets);
-    });
     
     return differenceSet([selectedSet, excludedSet]);
 }
