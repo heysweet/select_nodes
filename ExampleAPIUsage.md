@@ -35,6 +35,8 @@ of promises:
 
 We wait for the second batch of requests to resolve, and then we can just do unions and differences on the outputs and be done!
 
+**If we are ever running up on our limit of 4GB of memory because we are representing children and parents in one WASM module, we can instead host two WASM modules, one for children and one for parents which should double our capacity since each WASM module can have up to 4 GB of memory.**
+
 ## Graph representation
 
 The compressed graph representation could be something like the following:
