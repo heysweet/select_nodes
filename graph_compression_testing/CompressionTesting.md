@@ -81,8 +81,6 @@ A fun note from above, note that the String Map actually _does_ compress better.
 
 Even though the ID map is a much smaller representation, we will still get a O(1) retrieval time for children (after we do a `O(n + m)` parse time into a `HashMap<UniqueId, Vec<UniqueId>>`), a parse we would have to do for either format.
 
-# Limitations
-
 # Frontend WASM
 
 Mozilla claims [Note: A WebAssembly page has a constant size of 65,536 bytes, i.e., 64KiB and a maximum size of 100 pages (6.4MiB)](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory/Memory). This would mean we can't support graph traversal in the frontend (beyond small example DAGs). This didn't line up with my other findings.
@@ -103,7 +101,7 @@ A search would involve a step to pull down the JSON blob, process it in real tim
 
 ## Ship a compressed WASM binary that's already processed the JSON
 
-If the ingestion step involved generating a JSON file like the above, and then building a WASM wrapper which has already processed the JSON file, then we would be adding extra work to every ingestion step, without every binary being used. This would also increase the size of the compressed file we would have to store, but I cant' imagine substantially since the logic is mostly "Read in a JSON file, insert it into a HashMap, and then functionality to switch between children and parents modes.
+If the ingestion step involved generating a JSON file like the above, and then building a WASM wrapper which has already processed the JSON file, then we would be adding extra work to every ingestion step, without every binary being used. This would also increase the size of the compressed file we would have to store, but I can't imagine substantially since the logic is mostly "Read in a JSON file, insert it into a HashMap, and then functionality to switch between children and parents modes.
 
 ## Store a JSON blob for everybody, expose an endpoint that allows users to generate a Parents and Children map binary/binaries
 
