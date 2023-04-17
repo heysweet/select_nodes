@@ -20,6 +20,6 @@ The core logic is broken down into Graph logic and Selector logic, where Graph l
 
 ## Further Exploration
 
-* [Example API Usage](ExampleApiUsage.md)
+* [Example API Usage](ExampleAPIUsage.md)
 * [Graph Compression Testing](graph_compression_testing/CompressionTesting.md)
-* [Recommended Architecture](RecommendArchitecture.md)
+* [Recommended Architecture](RecommendedArchitecture.md)
